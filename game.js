@@ -14,7 +14,7 @@ const ENDING_ICONS = {
   "结束了？": "🌙", "极限过载": "🔋", "最佳小队": "🤝",
   "午夜钟鸣": "🕛", "停止响应": "💤"
 };
-const FATIGUE_RULES = { lowBattery: 40, fullSleepRecovery: 16, restRecovery: 8 };
+const FATIGUE_RULES = { lowBattery: 70, fullSleepRecovery: 16, restRecovery: 8 };
 const ACHIEVEMENTS = [
   { name: "低电量", icon: "🪫", condition: `本局疲劳第一次达到或超过${FATIGUE_RULES.lowBattery}%。`, insight: "劳动力包括人用于生产使用价值的体力和智力。", source: "《资本论》第一卷·第四章 货币转化为资本", url: "https://www.marxists.org/chinese/marx/capital/04.htm" },
   { name: "后台堆积", icon: "📚", condition: "本局疲劳第一次达到或超过75%。", insight: "劳动时间的延长，会碰到劳动者身体承受能力的界限。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
@@ -1076,6 +1076,6 @@ $("close-sidebar").addEventListener("click", closeSidebar);
 $("overlay").addEventListener("click", closeSidebar);
 $("close-dialog").addEventListener("click", () => $("detail-dialog").close());
 $("brand").addEventListener("click", event => { event.preventDefault(); if (!inTransition) render(); });
-// Existing saves above the newly lowered threshold also receive this achievement.
+// Existing saves at the current threshold also receive any missing achievement.
 if (s.fatigue >= FATIGUE_RULES.lowBattery && !s.achievements.includes("低电量")) unlock("低电量");
 render();
