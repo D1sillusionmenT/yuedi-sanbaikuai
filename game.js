@@ -14,16 +14,17 @@ const ENDING_ICONS = {
   "结束了？": "🌙", "极限过载": "🔋", "最佳小队": "🤝",
   "午夜钟鸣": "🕛", "停止响应": "💤"
 };
+const FATIGUE_RULES = { lowBattery: 40, fullSleepRecovery: 16, restRecovery: 8 };
 const ACHIEVEMENTS = [
-  { name: "低电量", icon: "🪫", condition: "本局疲劳第一次达到或超过50%。", insight: "劳动包含人的脑力和体力的耗费。", source: "《资本论》第一卷·商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" },
-  { name: "后台堆积", icon: "📚", condition: "本局疲劳第一次达到或超过75%。", insight: "劳动时间的延长，会碰到劳动者身体承受能力的界限。", source: "《资本论》第一卷·工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
-  { name: "请保存工作", icon: "💾", condition: "本局疲劳第一次达到或超过90%。", insight: "劳动者还需要留出满足精神生活与社会交往的时间。", source: "《资本论》第一卷·工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
-  { name: "重新上线", icon: "🌿", condition: "本局曾达到75%疲劳，随后在未中断的情况下恢复到50%以下。", insight: "劳动能力的持续发挥，需要休息和生活资料来恢复消耗。", source: "《资本论》第一卷·工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
-  { name: "友军支援", icon: "🤝", condition: "实际履行至少一项借用设备、交换分工或生活互助；仅看过提议不算。", insight: "有计划的共同劳动，能够形成个人单干所没有的生产力。", source: "《资本论》第一卷·协作", url: "https://www.marxists.org/chinese/marx/capital/11.htm" },
-  { name: "专业人士", icon: "🛠️", condition: "本人完成并交付100元完整委托或40元较小委托；此时可以仍待验收付款。", insight: "具体劳动通过一定方式，生产能满足他人需要的使用价值。", source: "《资本论》第一卷·商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" },
-  { name: "补给到位", icon: "🧾", condition: "本人网页委托或另约的活动介绍稿验收后，实际收到至少一笔报酬；预支生活费不算。", insight: "商品价值的实现，需要完成商品向货币的转化。", source: "《资本论》第一卷·货币或商品流通", url: "https://www.marxists.org/chinese/marx/capital/03.htm" },
-  { name: "最后一击", icon: "⏳", condition: "采用周日21:00和22:50的两个电脑时段，在23:50完成核对上传，且未因疲劳中断。", insight: "有目的的劳动，还需要相应的劳动资料来实现目标。", source: "《资本论》第一卷·劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
-  { name: "穿透迷雾", icon: "🔎", condition: "周五依次读完商户用途、制作者工作和验收状态三个记录；本人接单或程越接单均可。", insight: "商品形式使生产者之间的社会联系，表现为物与物的关系。", source: "《资本论》第一卷·商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" }
+  { name: "低电量", icon: "🪫", condition: `本局疲劳第一次达到或超过${FATIGUE_RULES.lowBattery}%。`, insight: "劳动力包括人用于生产使用价值的体力和智力。", source: "《资本论》第一卷·第四章 货币转化为资本", url: "https://www.marxists.org/chinese/marx/capital/04.htm" },
+  { name: "后台堆积", icon: "📚", condition: "本局疲劳第一次达到或超过75%。", insight: "劳动时间的延长，会碰到劳动者身体承受能力的界限。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
+  { name: "请保存工作", icon: "💾", condition: "本局疲劳第一次达到或超过90%。", insight: "劳动者还需要留出满足精神生活与社会交往的时间。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
+  { name: "重新上线", icon: "🌿", condition: "本局曾达到75%疲劳，随后在未中断的情况下恢复到50%以下。", insight: "劳动能力的持续发挥，需要休息和生活资料来恢复消耗。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
+  { name: "友军支援", icon: "🤝", condition: "实际履行至少一项借用设备、交换分工或生活互助；仅看过提议不算。", insight: "有计划的共同劳动，能够形成个人单干所没有的生产力。", source: "《资本论》第一卷·第十一章 协作", url: "https://www.marxists.org/chinese/marx/capital/11.htm" },
+  { name: "专业人士", icon: "🛠️", condition: "本人完成并交付100元完整委托或40元较小委托；此时可以仍待验收付款。", insight: "有目的的劳动，把预先设想的目标落实为能够满足需要的成果。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
+  { name: "补给到位", icon: "🧾", condition: "本人网页委托或另约的活动介绍稿验收后，实际收到至少一笔报酬；预支生活费不算。", insight: "商品价值的实现，需要完成商品向货币的转化。", source: "《资本论》第一卷·第三章 货币或商品流通", url: "https://www.marxists.org/chinese/marx/capital/03.htm" },
+  { name: "最后一击", icon: "⏳", condition: "采用周日21:00和22:50的两个电脑时段，在23:50完成核对上传，且未因疲劳中断。", insight: "有目的的劳动，还需要相应的劳动资料来实现目标。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
+  { name: "穿透迷雾", icon: "🔎", condition: "周五依次读完商户用途、制作者工作和验收状态三个记录；本人接单或程越接单均可。", insight: "商品形式使生产者之间的社会联系，表现为物与物的关系。", source: "《资本论》第一卷·第一章 商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" }
 ];
 const DEFAULT_STATE = () => ({
   version: 1, stage: "intro", day: 0, time: "", cash: 300, fatigue: 20,
@@ -110,7 +111,7 @@ function fatigue(delta, reason, time = s.time) {
   s.maxFatigue = Math.max(s.maxFatigue, s.fatigue);
   s.dayPeaks[s.day] = Math.max(s.dayPeaks[s.day], s.fatigue);
   log(`${reason}：疲劳 ${old}% → ${s.fatigue}%`, "疲劳", s.day, time);
-  if (old < 50 && s.fatigue >= 50) unlock("低电量");
+  if (s.fatigue >= FATIGUE_RULES.lowBattery && !s.achievements.includes("低电量")) unlock("低电量");
   if (old < 75 && s.fatigue >= 75) unlock("后台堆积");
   if (old < 90 && s.fatigue >= 90) unlock("请保存工作");
   if (s.maxFatigue >= 75 && old >= 50 && s.fatigue < 50 && s.fatigue < 100) unlock("重新上线");
@@ -133,7 +134,7 @@ function work(hours, reason, time) {
   for (let i = 0; i < hours; i++) if (!fatigue(6, reason, time)) return false;
   return true;
 }
-function sleep() { s.time = "23:00"; return fatigue(-20, "完整睡眠", "23:00"); }
+function sleep() { s.time = "23:00"; return fatigue(-FATIGUE_RULES.fullSleepRecovery, "完整睡眠", "23:00"); }
 function setStage(stage, day, time) {
   s.stage = stage; s.day = day; s.time = time; s.notice = "";
 }
@@ -191,7 +192,7 @@ function chooseMondayHour(id) {
   s.mondayHour = id;
   if (id === "checklist") { if (!fatigue(6, "整理交付范围和测试清单", "22:00—23:00")) return; log("把初版清单发给队友，明天讨论时继续核对。", "项目"); }
   if (id === "sketch") { if (!fatigue(6, "画时间轴与页面草图", "22:00—23:00")) return; s.personal.push("周一留下时间轴草图"); }
-  if (id === "rest") { log("向队友说明设备情况并约好明天讨论。", "沟通"); if (!fatigue(-8, "今晚明确休息一小时", "22:00—23:00")) return; }
+  if (id === "rest") { log("向队友说明设备情况并约好明天讨论。", "沟通"); if (!fatigue(-FATIGUE_RULES.restRecovery, "今晚明确休息一小时", "22:00—23:00")) return; }
   if (!sleep()) return;
   startTuesday();
 }
@@ -210,7 +211,7 @@ function chooseGift(id) {
   if (id === "keyboard") {
     if (!spend(42, "四人合购键盘：个人出资")) return;
     log("小林负责取货；合购订单已下，赠与阿辰要等他实际收到。", "购买");
-    if (!fatigue(-8, "饭前休息一小时", "17:00—18:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "饭前休息一小时", "17:00—18:00")) return;
   } else if (id === "card") {
     if (!spend(8, "照片卡材料与打印")) return;
     if (!fatigue(6, "整理合照、排版和领取照片卡", "17:00—18:00")) return;
@@ -225,7 +226,7 @@ function chooseTuesdayDinner(id) {
   s.birthday = id; s.time = "18:00";
   if (!payMeal(1, "晚餐", id === "full" ? 18 : 7, "")) return;
   if (id === "full") { s.personal.push("参加阿辰的完整生日晚餐"); log("一起吃饭、聊天到20:00；饭钱18元替代普通晚饭7元。", "交往"); }
-  if (id === "short") { s.personal.push("生日短聚"); log("提前说明要先离开，19:00前与阿辰见面。", "交往"); if (!fatigue(-8, "短聚后休息一小时", "19:00—20:00")) return; }
+  if (id === "short") { s.personal.push("生日短聚"); log("提前说明要先离开，19:00前与阿辰见面。", "交往"); if (!fatigue(-FATIGUE_RULES.restRecovery, "短聚后休息一小时", "19:00—20:00")) return; }
   if (id === "alone") { log("说明今晚不参加聚餐，照常吃晚饭。", "沟通"); if (!fatigue(6, "晚饭后画个人时间轴草图", "19:00—20:00")) return; s.personal.push("周二继续个人草图"); }
   if (s.gift === "keyboard") log("小林把合购键盘交给阿辰；他认出自己试过的那款。", "赠与");
   if (s.gift === "card") log(id === "alone" ? "照片卡请同学转交，阿辰收到后才有回应。" : "把照片卡交给阿辰，卡上的旧照片引出了具体往事。", "赠与");
@@ -272,7 +273,7 @@ function deliverCommission(time) {
 function finishWednesday() {
   s.time = "13:00";
   if (s.commission === "full") { if (!commissionHour("手机整理商户资料与工作范围", "13:00—14:00")) return; }
-  else if (!fatigue(-8, "未登记委托准备，明确休息一小时", "13:00—14:00")) return;
+  else if (!fatigue(-FATIGUE_RULES.restRecovery, "未登记委托准备，明确休息一小时", "13:00—14:00")) return;
   if (s.device === "public") {
     s.time = "14:30"; if (!fatigue(2, "前往公共设备", "14:30")) return;
     if (s.commission === "full") {
@@ -299,7 +300,7 @@ function finishWednesday() {
     s.courseHours = 3;
     log("队友实际完成一小时课程功能；你已发出演示材料，周四仍须完成自己的一小时代码。", "分工");
   }
-  if (!fatigue(-8, "夜间明确休息一小时", "22:00—23:00")) return;
+  if (!fatigue(-FATIGUE_RULES.restRecovery, "夜间明确休息一小时", "22:00—23:00")) return;
   if (!sleep()) return;
   startThursday();
 }
@@ -328,12 +329,12 @@ function thuAfterDinner() {
   const id = s.thursdayDinner;
   if (id === "delivery") {
     log("订单：餐食7元、配送9元。店员出餐后由送餐者接单并送达。", "餐饮");
-    if (!fatigue(-8, "在宿舍等餐并明确休息一小时", "17:30—18:30")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "在宿舍等餐并明确休息一小时", "17:30—18:30")) return;
   }
   if (id === "pickup") { log("店员装袋，你按取餐号自取；未购买配送服务。", "餐饮"); if (!fatigue(4, "雨中取餐并返回", "17:30—18:30")) return; }
   if (id === "roommate") {
     log("室友帮你带回已付款的晚饭；你答应稍后帮他整理展示截图。", "餐饮");
-    if (!fatigue(-8, "等待晚饭时明确休息一小时", "17:30—18:30")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "等待晚饭时明确休息一小时", "17:30—18:30")) return;
     if (!fatigue(3, "帮室友整理半小时截图", "19:00—19:30")) return;
     collaborate("thursday-meal", "室友带回你的晚饭；你实际帮他完成半小时展示截图整理。", false);
   }
@@ -342,7 +343,7 @@ function thuAfterDinner() {
     if (!commissionHour("制作商户页面初稿", "20:00—21:00")) return;
     if (!commissionHour("完成范围内调整、核对和交付", "21:00—22:00")) return;
     deliverCommission("22:00");
-    if (!fatigue(-8, "22点后休息一小时", "22:00—23:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "22点后休息一小时", "22:00—23:00")) return;
   } else if (s.device === "borrow" && s.commission === "full") {
     if (!commissionHour("制作商户页面初稿", "20:00—21:00")) return;
     if (!commissionHour("完成范围内调整、核对和交付", "21:00—22:00")) return;
@@ -357,10 +358,10 @@ function thuAfterDinner() {
   } else if (s.device === "borrow" && s.commission === "decline") {
     if (!courseHour("完成课程基础功能", "20:00—21:00")) return;
     if (!courseHour("完成课程基础功能", "21:00—22:00")) return;
-    if (!fatigue(-8, "22点后休息一小时", "22:00—23:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "22点后休息一小时", "22:00—23:00")) return;
   } else {
     if (!fatigue(6, "用手机整理周六展示提纲", "20:00—21:00")) return;
-    if (!fatigue(-8, "21点后明确休息一小时", "21:00—22:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "21点后明确休息一小时", "21:00—22:00")) return;
   }
   if (!sleep()) return;
   startFriday();
@@ -376,7 +377,7 @@ function startFriday() {
     if (!fatigue(6, "写活动介绍并核对三项内容", "12:30—13:30")) return;
     s.copyDelivered = true;
     log("30元介绍稿已单独交付，仍待17:30验收与18:00付款。", "交付");
-  } else if (!fatigue(-8, "午间明确休息一小时", "12:30—13:30")) return;
+  } else if (!fatigue(-FATIGUE_RULES.restRecovery, "午间明确休息一小时", "12:30—13:30")) return;
   if (s.device === "public") {
     if (!fatigue(2, "前往并领取公共设备", "14:30")) return;
     if (s.commission === "full") {
@@ -420,11 +421,11 @@ function chooseMobile(id) {
     if (!mobileHour("在本人电脑继续修改手机布局", "19:00—20:00")) return;
     if (!mobileHour("在本人电脑继续修改手机布局", "20:00—21:00")) return;
     log("自行修改三小时完成，手机端可查找和筛选活动。", "项目");
-    if (!fatigue(-8, "21点后休息一小时", "21:00—22:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "21点后休息一小时", "21:00—22:00")) return;
   } else {
     if (id === "self") log("已做1/3小时。队友确认周六09:00—11:00让出电脑，自己改用手机准备展示。", "约定");
     else log(id === "component" ? "组件接入一小时后，手机核心操作可用；个人时间轴仍未做。" : "一小时基本重排完成，手机核心操作可用；扩展布局暂缓。", "项目");
-    if (!fatigue(-8, "晚间明确休息一小时", "19:00—20:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "晚间明确休息一小时", "19:00—20:00")) return;
   }
   if (!sleep()) return;
   startSaturday();
@@ -465,8 +466,8 @@ function chooseSaturdayPersonal(id) {
     s.personal.push("周六推进个人时间轴草案");
   }
   if (id === "rest") {
-    if (!fatigue(-8, "明确休息", "16:00—17:00")) return;
-    if (!fatigue(-8, "继续休息", "17:00—18:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "明确休息", "16:00—17:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "继续休息", "17:00—18:00")) return;
     s.personal.push("周六留下两小时休息");
   }
   s.time = "18:00";
@@ -478,7 +479,7 @@ function chooseSaturdayCoord(id) {
   s.saturdayCoord = id; s.time = "19:00";
   if (id === "self") {
     log("确认周日20:00—22:00自己完成修正与上传；队友确认设备时间。", "日程");
-    if (!fatigue(-8, "协调后明确休息一小时", "19:00—20:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "协调后明确休息一小时", "19:00—20:00")) return;
   }
   if (id === "team") {
     log("约定：你今晚发空结果触发步骤；队友周日18:00修正，你20:00核对上传。", "分工");
@@ -525,7 +526,7 @@ function chooseSundayPersonal(id) {
   if (id === "portfolio") {
     if (!fatigue(6, "整理自己的摄影或时间轴记录", "17:00—18:00")) return;
     s.personal.push("周日整理个人作品集说明");
-  } else if (!fatigue(-8, "截止前明确休息一小时", "17:00—18:00")) return;
+  } else if (!fatigue(-FATIGUE_RULES.restRecovery, "截止前明确休息一小时", "17:00—18:00")) return;
   s.time = "18:00";
   if (!payMeal(6, "晚餐", 7, "sunAfterDinner")) return;
   sunAfterDinner();
@@ -550,7 +551,7 @@ function chooseSundayExecute(id) {
     s.finalFix = true;
     if (!fatigue(6, "用室友电脑修正空结果提示", "19:00—20:00")) return;
     collaborate("sunday-roommate", "你履行截图整理约定，室友19:00—20:00实际借出电脑供课程修正。", true);
-    if (!fatigue(-8, "两段电脑工作间休息一小时", "20:00—21:00")) return;
+    if (!fatigue(-FATIGUE_RULES.restRecovery, "两段电脑工作间休息一小时", "20:00—21:00")) return;
     if (!fatigue(6, "用队友电脑核对最终文件并上传", "21:00—22:00")) return;
     s.uploaded = true; s.uploadTime = "周日22:00";
   } else if (s.sunPlan === "late") {
@@ -604,7 +605,7 @@ function scene() {
       choices: [
         ["checklist", "整理交付范围与测试清单", `1小时手机或电脑准备；${projected(6)}`],
         ["sketch", "留下自己想做的时间轴草图", `1小时个人构想；${projected(6)}`],
-        ["rest", "告诉队友设备情况，今晚休息", `沟通后明确休息1小时；${projected(-8)}`]
+        ["rest", "告诉队友设备情况，今晚休息", `沟通后明确休息1小时；${projected(-FATIGUE_RULES.restRecovery)}`]
       ]
     };
     case "tueGift": return {
@@ -612,7 +613,7 @@ function scene() {
       body: ["阿辰今天过生日。项目小组刚把本周最低交付范围定下来，手机上的生日群又跳出新消息。去年那张拍糊的合照，你一直没有删。", s.device === "repair" ? "下午你取回修好的电脑，周末的设备时间宽松了一些。" : "今天没有额外电脑时段，你仍可用手机准备礼物或课程清单。"],
       messages: [["小林", "阿辰试过那款键盘，168元，四个人每人42元。有人不方便就先不下单。"], ["阿辰", "晚上想和大家吃个饭，最近老是凑不齐人。礼物别谁一个人扛。"]],
       choices: [
-        ["keyboard", "参加键盘合购，饭前休息", `出资42元；${projected(-8)}。礼物送出与购买分开记录。`, s.cash < 42],
+        ["keyboard", "参加键盘合购，饭前休息", `出资42元；${projected(-FATIGUE_RULES.restRecovery)}。礼物送出与购买分开记录。`, s.cash < 42],
         ["card", "做一张照片卡", `材料与打印8元，准备1小时；${projected(6)}`, s.cash < 8],
         ["none", "发祝福，把一小时用来准备项目", `礼物支出0元，课程验收清单1小时；${projected(6)}`]
       ]
@@ -622,7 +623,7 @@ function scene() {
       body: ["群里发来一张空桌照片。小林说各自确认再点，不提前算你的那份。礼物和吃饭分开统计。", "18元生日餐会替代普通7元晚饭；不会扣两顿。"],
       choices: [
         ["full", "参加整场晚餐", "晚餐18元；聊天到20:00；本段疲劳不变。", s.cash < 18],
-        ["short", "吃普通餐，见一面后先走", `晚餐7元，之后休息1小时；${projected(-8)}`, s.cash < 7],
+        ["short", "吃普通餐，见一面后先走", `晚餐7元，之后休息1小时；${projected(-FATIGUE_RULES.restRecovery)}`, s.cash < 7],
         ["alone", "今晚不参加，饭后画草图", `晚餐7元，个人创作1小时；${projected(6)}`, s.cash < 7]
       ]
     };
@@ -658,7 +659,7 @@ function scene() {
       body: ["雨下大了，晚饭仍要吃。页面上同一份普通餐是7元，配送另收9元；另一种办法是自己去取。室友正要去同一档口，也发来消息。", "订单价格、提供服务的人和你自己的时间安排都摆在眼前。"],
       messages: [["食堂档口", "现点现做，大约18:05备好。自取请看取餐号；配送单会在送餐者取走后更新状态。"], ["室友", "我正好下去。帮你带回来可以，晚点帮我排两张展示截图，半小时就够。"]],
       choices: [
-        ["delivery", "付费配送，留在宿舍等", `餐食7元＋配送9元＝16元；休息1小时，${projected(-8)}`, s.cash < 16],
+        ["delivery", "付费配送，留在宿舍等", `餐食7元＋配送9元＝16元；休息1小时，${projected(-FATIGUE_RULES.restRecovery)}`, s.cash < 16],
         ["pickup", "自己去取", `晚餐7元；额外往返1小时，${projected(4)}`, s.cash < 7],
         ["roommate", "请室友带回，帮他整理截图", `晚餐7元；休息1小时后做半小时截图，疲劳净变化−5。`, s.cash < 7]
       ]
@@ -689,14 +690,14 @@ function scene() {
       choices: [
         ["walk", "去摄影散步", `免费，和朋友走两小时；${projected(4)}`],
         ["sketch", "留在宿舍推进时间轴草图", `个人创作2小时；${projected(12)}`],
-        ["rest", "把两小时留给休息", `不新增照片或草图；${projected(-16)}`]
+        ["rest", "把两小时留给休息", `不新增照片或草图；${projected(-2 * FATIGUE_RULES.restRecovery)}`]
       ]
     };
     case "satCoord": return {
       day: "第六天 · 周六", title: "明晚谁用电脑", time: "19:00 · 项目群",
       body: ["晚饭已经付过。队友问：“空结果提示谁来修？最后谁上传？现在定，我好排自己的事。”", "周日23:59是本故事设定的最终提交时间。展示过，不等于最终版已经交上去。"],
       choices: [
-        ["self", "自己做两项，确认周日20:00—22:00", `队友确认设备；今晚休息1小时，${projected(-8)}。`],
+        ["self", "自己做两项，确认周日20:00—22:00", `队友确认设备；今晚休息1小时，${projected(-FATIGUE_RULES.restRecovery)}。`],
         ["team", "与队友分工，今晚发检查要点", `今晚手机整理1小时，${projected(6)}；队友明晚修正，你负责上传。`],
         ["defer", "今晚继续自己的作品集，明天再问", `个人创作1小时，${projected(6)}；${s.device === "repair" ? "本人电脑仍可用" : "目前只确认明晚1小时电脑"}。`]
       ]
@@ -715,7 +716,7 @@ function scene() {
       body: [`今晚安排：${s.sunPlan === "team" ? "队友18点修正，你20点核对上传" : s.sunPlan === "self" ? "你20点至22点完成修正与上传" : s.sunPlan === "roommate" ? "室友19点借电脑，队友21点再借一小时" : s.sunPlan === "late" ? "你21点修正，22:50做最后核对" : "目前只确认21点一小时，仍欠上传时段"}。`, "这一小时可以整理自己的摄影或时间轴记录，也可以明确休息。两种安排都不会替你完成晚上的课程任务。"],
       choices: [
         ["portfolio", "整理自己的作品集说明", `手机专注1小时；${projected(6)}`],
-        ["rest", "明确休息一小时", `${projected(-8)}`]
+        ["rest", "明确休息一小时", `${projected(-FATIGUE_RULES.restRecovery)}`]
       ]
     };
     case "sunExecute": {
@@ -760,21 +761,25 @@ function renderIntro() {
       <button class="primary-button hero-start" type="button" data-action="replay">开始这一周</button>
       <button class="subtle-button hero-collection" type="button" data-action="collection"><span aria-hidden="true">🏅</span> 查看以往成就 <span class="collection-count">${collectedAchievements().length} / ${ACHIEVEMENTS.length}</span></button>
       <div class="teaser"><div class="teaser-art" aria-hidden="true"></div><div class="teaser-copy"><strong>周一 08:10 · 宿舍</strong><p>电脑没有亮。项目群的消息却已经到了。</p><small>阅读约 15–25 分钟</small></div></div>
-      <p class="theory-whisper hero-whisper"><span>马原 · 观察角</span> 实践总是在一定的现实条件下展开。</p>
+      ${marxNote("theory-whisper hero-whisper", 0)}
     </div>
   </div></section>`;
 }
 const MARX_NOTES = [
-  "实践总是在一定的现实条件下展开。",
-  "商品的使用价值，是它满足某种需要的属性。",
-  "商品交换使彼此独立的私人劳动发生社会联系。",
-  "商品的价格，不能直接说明具体的劳动过程。",
-  "商品交换中，人与人的关系会表现为物与物的关系。",
-  "生产和生活的条件，影响个人发展的空间。",
-  "分析社会现象，要透过表面联系追问社会关系。"
+  { text: "人的活动以现实的物质生活条件为前提。", source: "《德意志意识形态》第一卷·费尔巴哈", url: "https://www.marxists.org/chinese/marx/marxist.org-chinese-marx-1846.htm" },
+  { text: "商品的使用价值，是它满足某种需要的属性。", source: "《资本论》第一卷·第一章 商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" },
+  { text: "商品交换需要通过商品占有者之间的社会关系来实现。", source: "《资本论》第一卷·第二章 交换过程", url: "https://www.marxists.org/chinese/marx/capital/02.htm" },
+  { text: "劳动过程离不开有目的的活动、劳动对象和劳动资料。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
+  { text: "商品的价格表达与实际取得货币，是不同的环节。", source: "《资本论》第一卷·第三章 货币或商品流通", url: "https://www.marxists.org/chinese/marx/capital/03.htm" },
+  { text: "每个人的自由发展与一切人的自由发展相联系。", source: "《共产党宣言》二·无产者和共产党人", url: "https://www.marxists.org/chinese/marx-engels2/02/01.htm" },
+  { text: "认识是否符合实际，需要通过实践加以检验。", source: "《关于费尔巴哈的提纲》第二条", url: "https://www.marxists.org/chinese/marx-engels2/01/15.htm" }
 ];
-function marxNote() {
-  return `<p class="theory-whisper"><span>马原 · 观察角</span> ${MARX_NOTES[s.day]}</p>`;
+function knowledgeSource(item) {
+  return `<cite class="knowledge-source">— <a href="${item.url}" target="_blank" rel="noopener noreferrer">${item.source}</a></cite>`;
+}
+function marxNote(className = "theory-whisper", day = s.day) {
+  const item = MARX_NOTES[day] || MARX_NOTES[0];
+  return `<p class="${className}"><span>观察角</span> ${item.text}${knowledgeSource(item)}</p>`;
 }
 function renderStory(info) {
   return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${DAY_MOTIFS[s.day].icon}</span> ${info.day}</div><h1 class="story-title">${info.title}</h1><div class="story-time">${info.time}</div></div>
@@ -791,6 +796,13 @@ const ENDINGS = {
   "最佳小队": "文件上传后，群里有人发了一个“收到”。回看这一周，电脑、代码、截图和检查清单都留下了各自的名字。你们把答应过的事情接上了。",
   "午夜钟鸣": "23:59。最终版仍有必要工作未完成。屏幕上已经做过的事还在，没赶上的部分也写得清楚。明天如何处理，需要再和相关的人商量。",
   "停止响应": "屏幕上还有队友、委托方和朋友的消息。你看着已经写满的日程，暂时无法继续原来的安排。消息还在抵达，你已经没有余力回应。"
+};
+const ENDING_INSIGHTS = {
+  "结束了？": { text: "人的活动从既有的物质生活条件出发，也会改变这些条件。回看这周的设备、费用与约定，才能理解哪些选择得以实现、哪些计划暂时搁置。", source: "《德意志意识形态》第一卷·费尔巴哈", url: "https://www.marxists.org/chinese/marx/marxist.org-chinese-marx-1846.htm" },
+  "极限过载": { text: "劳动时间的延长受到身体条件和社会生活需要的限制。完成交付并不能替代休息、交往与个人发展的时间。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
+  "最佳小队": { text: "《共产党宣言》把每个人的自由发展与一切人的自由发展联系起来。本局的实际分工与互助，提供了思考个人发展需要哪些共同条件的起点。", source: "《共产党宣言》二·无产者和共产党人", url: "https://www.marxists.org/chinese/marx-engels2/02/01.htm" },
+  "午夜钟鸣": { text: "认识需要接受实践的检验，并在实践中得到修正和发展。未完成的交付留下了下一轮调整计划、设备和时间安排的依据。", source: "《实践论》", url: "https://www.marxists.org/chinese/maozedong/marxist.org-chinese-mao-193707.htm" },
+  "停止响应": { text: "劳动能力的发挥伴随着体力和智力的消耗，其维持需要相应的生活资料。疲劳中断提醒我们，分析任务安排还要考察劳动能力得以持续发挥的条件。", source: "《资本论》第一卷·第四章 货币转化为资本", url: "https://www.marxists.org/chinese/marx/capital/04.htm" }
 };
 function relationCards() {
   const cards = [];
@@ -814,9 +826,11 @@ function relationCards() {
 }
 function renderEnding() {
   const outcome = s.ending || "本周记录";
+  const insight = ENDING_INSIGHTS[outcome];
   const paid = s.ledger.filter(item => item.delta < 0 && !item.label.includes("早餐") && !item.label.includes("午餐") && !item.label.includes("晚餐"));
   const rels = relationCards();
   return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${ENDING_ICONS[outcome] || "📖"}</span> 本局结局 · ${DAYS[s.day]} ${s.time}</div><h1 class="result-title">${outcome}</h1><p class="result-copy">${ENDINGS[outcome] || ""}</p></div>
+    ${insight ? `<aside class="ending-insight" aria-label="结局回望"><p>${insight.text}</p>${knowledgeSource(insight)}</aside>` : ""}
     <section class="ending-actions" aria-label="本局结束后的选择"><p>这一周结束了。换个选择，会走到哪里？</p><div class="ending-buttons"><button class="primary-button" type="button" data-action="replay"><span aria-hidden="true">↻</span> 再来一局</button><button class="subtle-button" type="button" data-action="home"><span aria-hidden="true">⌂</span> 返回首页</button></div><small>新一局从周一和300元开始，已解锁成就会保留。</small></section>
     <section class="story-card"><p class="eyebrow">我的这一周${outcome === "停止响应" ? " · 截至中断时" : ""}</p>
       <div class="record-grid">
@@ -861,7 +875,7 @@ function renderSidebar() {
     <div class="stat"><span class="stat-label"><span aria-hidden="true">💰</span> 实际余额</span><span class="stat-value">${money(s.cash)}</span></div>
     <div class="stat"><span class="stat-label">餐费预留之外</span><span class="stat-value small ${remaining < 0 ? "warn" : ""}">${remaining >= 0 ? money(remaining) : `缺 ${money(-remaining)}`}</span></div>
     <div class="stat wide"><span class="stat-label"><span aria-hidden="true">🔋</span> 疲劳 · 达到100%将立即中断</span><span class="stat-value ${s.fatigue >= 75 ? "warn" : ""}">${s.fatigue}%</span><div class="fatigue-track"><div class="fatigue-fill ${s.fatigue >= 75 ? "high" : ""}" style="width:${s.fatigue}%"></div></div></div>
-  </div>`;
+  </div><p class="fatigue-rule-note">完整睡眠 −${FATIGUE_RULES.fullSleepRecovery} · 一小时休息 −${FATIGUE_RULES.restRecovery} · 低电量 ${FATIGUE_RULES.lowBattery}%</p>`;
   $("schedule").innerHTML = `<div class="aside-section"><h2 class="aside-heading">日程与进度</h2>
     <div class="aside-line"><span>当前</span><strong>${s.stage === "intro" ? "周一开始前" : `${DAYS[s.day]} ${s.time}`}</strong></div>
     <div class="aside-line"><span>课程基础功能</span><strong>${s.courseHours}/4 小时</strong></div>
@@ -872,7 +886,7 @@ function renderSidebar() {
     <button type="button" class="subtle-button" data-action="journal">查看本局完整记录</button>
   </div>`;
   $("ledger").innerHTML = `<div class="aside-section"><h2 class="aside-heading">最近实际收支</h2><ul class="ledger-list">${s.ledger.length ? s.ledger.slice(-7).reverse().map(item => `<li><span>${DAYS[item.day]} ${item.label}</span><b class="${item.delta > 0 ? "income" : ""}">${item.delta > 0 ? "+" : "−"}${money(Math.abs(item.delta))}</b></li>`).join("") : "<li>尚无实际收支</li>"}</ul><p class="hero-note">预留只提醒未来餐费，不从余额再次扣除。</p></div>`;
-  $("ledger").insertAdjacentHTML("beforeend", `<div class="sidebar-note"><span>马原 · 观察角</span><p>${MARX_NOTES[s.day]}</p></div>`);
+  $("ledger").insertAdjacentHTML("beforeend", marxNote("sidebar-note"));
   $("advance-button").classList.toggle("hidden", s.day < 3 || s.advanceUsed || ["intro", "ending", "theory"].includes(s.stage));
   $("day-chip").textContent = s.stage === "intro" ? "七天的故事" : s.stage === "ending" ? "本周结束" : s.stage === "theory" ? "课堂分析" : `${DAYS[s.day]} · 第 ${s.day + 1}/7 天`;
 }
@@ -1002,7 +1016,7 @@ function openAchievements() {
 function openAchievement(name) {
   const item = ACHIEVEMENTS.find(a => a.name === name);
   if (!item || !achievementCollection.has(name)) return;
-  openDialog(`${item.icon} ${item.name}`, `<p class="achievement-unlocked">已解锁</p><div class="achievement-detail"><p class="achievement-condition"><strong>触发条件</strong><br>${item.condition}</p><p class="achievement-insight">${item.insight}<cite>— <a href="${item.url}" target="_blank" rel="noopener noreferrer">${item.source}</a></cite></p></div><button class="subtle-button" type="button" data-action="collection">返回以往成就</button>`);
+  openDialog(`${item.icon} ${item.name}`, `<p class="achievement-unlocked">已解锁</p><div class="achievement-detail"><p class="achievement-condition"><strong>触发条件</strong><br>${item.condition}</p><p class="achievement-insight">${item.insight}${knowledgeSource(item)}</p></div><button class="subtle-button" type="button" data-action="collection">返回以往成就</button>`);
 }
 function restartRun(startImmediately = false) {
   if (inTransition) return;
@@ -1062,4 +1076,6 @@ $("close-sidebar").addEventListener("click", closeSidebar);
 $("overlay").addEventListener("click", closeSidebar);
 $("close-dialog").addEventListener("click", () => $("detail-dialog").close());
 $("brand").addEventListener("click", event => { event.preventDefault(); if (!inTransition) render(); });
+// Existing saves above the newly lowered threshold also receive this achievement.
+if (s.fatigue >= FATIGUE_RULES.lowBattery && !s.achievements.includes("低电量")) unlock("低电量");
 render();
