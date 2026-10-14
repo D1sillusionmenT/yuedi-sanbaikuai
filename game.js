@@ -728,20 +728,39 @@ function messageMarkup([source, body]) {
 }
 function renderIntro() {
   return `<section class="hero"><div class="hero-content">
-    <p class="eyebrow"><span aria-hidden="true">📆</span> 七天 · 一次选择接着一次选择</p>
-    <h1>月底还剩<br>三百块</h1>
-    <p class="hero-lead">还有七天，你会怎样安排这一周？</p>
-    <div class="hero-stats"><span><span aria-hidden="true">💰</span> 余额 ¥300</span><span><span aria-hidden="true">🔋</span> 疲劳 20%</span><span><span aria-hidden="true">⏰</span> 最终提交 周日 23:59</span></div>
-    <button class="primary-button" type="button" data-choice="start">开始这一周</button>
-    <p class="hero-note">阅读约 15–25 分钟 · 可随时继续本局进度</p>
-    <div class="teaser"><strong>周一 08:10 · 宿舍</strong><p>电脑没有亮。项目群的消息却已经到了。</p></div>
+    <div class="hero-heading"><p class="eyebrow">七天 · 一次选择接着一次选择</p>
+      <h1>月底还剩三百块</h1>
+      <p class="hero-lead">还有七天，你会怎样安排这一周？</p></div>
+    <div class="hero-bottom">
+      <div class="hero-stats" aria-label="本周初始状态">
+        <div class="hero-stat"><span class="hero-stat-icon" aria-hidden="true">👛</span><span class="hero-stat-label">余额</span><strong>¥300</strong></div>
+        <div class="hero-stat"><span class="hero-stat-icon" aria-hidden="true">🔋</span><span class="hero-stat-label">疲劳</span><strong>20%</strong></div>
+        <div class="hero-stat"><span class="hero-stat-icon" aria-hidden="true">🗓️</span><span class="hero-stat-label">最终提交</span><strong>周日 23:59</strong></div>
+      </div>
+      <button class="primary-button hero-start" type="button" data-choice="start">开始这一周</button>
+      <div class="teaser"><div class="teaser-art" aria-hidden="true"></div><div class="teaser-copy"><strong>周一 08:10 · 宿舍</strong><p>电脑没有亮。项目群的消息却已经到了。</p><small>阅读约 15–25 分钟</small></div></div>
+      <p class="theory-whisper hero-whisper"><span>马原 · 观察角</span> 实践总是在一定的现实条件下展开。</p>
+    </div>
   </div></section>`;
+}
+const MARX_NOTES = [
+  "实践总是在一定的现实条件下展开。",
+  "商品的使用价值，是它满足某种需要的属性。",
+  "商品交换使彼此独立的私人劳动发生社会联系。",
+  "商品的价格，不能直接说明具体的劳动过程。",
+  "商品交换中，人与人的关系会表现为物与物的关系。",
+  "生产和生活的条件，影响个人发展的空间。",
+  "分析社会现象，要透过表面联系追问社会关系。"
+];
+function marxNote() {
+  return `<p class="theory-whisper"><span>马原 · 观察角</span> ${MARX_NOTES[s.day]}</p>`;
 }
 function renderStory(info) {
   return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${DAY_MOTIFS[s.day].icon}</span> ${info.day}</div><h1 class="story-title">${info.title}</h1><div class="story-time">${info.time}</div></div>
     <section class="story-card"><div class="story-copy">${info.body.map(p => `<p>${p}</p>`).join("")}</div>${(info.messages || []).map(messageMarkup).join("")}${info.extra || ""}</section>
     ${s.notice && s.stage !== "funds" ? `<div class="warning">${s.notice}</div>` : ""}
     <p class="section-label">下一步</p><div class="choices">${(info.choices || []).map(choiceMarkup).join("")}</div>
+    ${marxNote()}
     <p class="hero-note">数值、价格、课程与人物均为本游戏的虚构设定。阅读消息不消耗游戏时间。</p>
   </div>`;
 }
@@ -831,11 +850,12 @@ function renderSidebar() {
     <button type="button" class="subtle-button" data-action="journal">查看本局完整记录</button>
   </div>`;
   $("ledger").innerHTML = `<div class="aside-section"><h2 class="aside-heading">最近实际收支</h2><ul class="ledger-list">${s.ledger.length ? s.ledger.slice(-7).reverse().map(item => `<li><span>${DAYS[item.day]} ${item.label}</span><b class="${item.delta > 0 ? "income" : ""}">${item.delta > 0 ? "+" : "−"}${money(Math.abs(item.delta))}</b></li>`).join("") : "<li>尚无实际收支</li>"}</ul><p class="hero-note">预留只提醒未来餐费，不从余额再次扣除。</p></div>`;
+  $("ledger").insertAdjacentHTML("beforeend", `<div class="sidebar-note"><span>马原 · 观察角</span><p>${MARX_NOTES[s.day]}</p></div>`);
   $("advance-button").classList.toggle("hidden", s.day < 3 || s.advanceUsed || ["intro", "ending", "theory"].includes(s.stage));
   $("day-chip").textContent = s.stage === "intro" ? "七天的故事" : s.stage === "ending" ? "本周结束" : s.stage === "theory" ? "课堂分析" : `${DAYS[s.day]} · 第 ${s.day + 1}/7 天`;
 }
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-const MOTION = { sceneExit: 170, day: 1500, ending: 1900, overlayExit: 240 };
+const MOTION = { sceneExit: 250, day: 1350, ending: 1700, overlayExit: 440 };
 let renderedView = null;
 let transitionTimer = null;
 let inTransition = false;
@@ -850,6 +870,7 @@ function focusScene() {
 }
 function draw(animate = false) {
   const main = $("main");
+  document.body.classList.toggle("is-intro", s.stage === "intro");
   main.innerHTML = s.stage === "intro" ? renderIntro() : s.stage === "ending" ? renderEnding() : s.stage === "theory" ? renderTheory() : renderStory(scene());
   if (animate) main.firstElementChild?.classList.add("scene-enter");
   renderSidebar();
@@ -887,12 +908,12 @@ function showOverlay(kind) {
   overlay.classList.remove("hidden", "is-visible");
   overlay.setAttribute("aria-hidden", "false");
   document.body.classList.add("is-transitioning");
-  requestAnimationFrame(() => {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     if (inTransition && !overlayExiting) {
       overlay.classList.add("is-visible");
       $("skip-transition").focus({ preventScroll: true });
     }
-  });
+  }));
   transitionTimer = setTimeout(finishOverlay, duration);
 }
 function render() {
