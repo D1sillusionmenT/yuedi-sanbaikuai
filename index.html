@@ -40,6 +40,16 @@
       </aside>
     </div>
   </div>
+  <div id="scene-transition" class="scene-transition hidden" role="status" aria-live="polite" aria-hidden="true">
+    <div class="transition-panel">
+      <span id="transition-symbol" class="transition-symbol" aria-hidden="true"></span>
+      <p id="transition-kicker" class="transition-kicker"></p>
+      <h2 id="transition-title" class="transition-title"></h2>
+      <p id="transition-detail" class="transition-detail"></p>
+      <div class="transition-progress" aria-hidden="true"><span></span></div>
+      <button id="skip-transition" class="transition-skip" type="button">跳过过场</button>
+    </div>
+  </div>
   <div id="overlay" class="overlay hidden" aria-hidden="true"></div>
   <dialog id="detail-dialog" class="detail-dialog">
     <button id="close-dialog" class="dialog-close" type="button" aria-label="关闭">×</button>

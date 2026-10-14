@@ -1,6 +1,19 @@
 const SAVE_KEY = "three-hundred-game-v1";
 const COLLECTION_KEY = "three-hundred-achievements-v1";
 const DAYS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+const DAY_MOTIFS = [
+  { icon: "💻", line: "消息比开机声先到" },
+  { icon: "🎂", line: "日程里还有朋友" },
+  { icon: "📩", line: "一份新委托出现了" },
+  { icon: "🌧️", line: "雨落在宿舍门口" },
+  { icon: "🧾", line: "账单与交付等着核对" },
+  { icon: "📱", line: "展示已经开始" },
+  { icon: "⏳", line: "最后一天，时间继续走" }
+];
+const ENDING_ICONS = {
+  "结束了？": "🌙", "极限过载": "🔋", "最佳小队": "🤝",
+  "午夜钟鸣": "🕛", "停止响应": "💤"
+};
 const DEFAULT_STATE = () => ({
   version: 1, stage: "intro", day: 0, time: "", cash: 300, fatigue: 20,
   maxFatigue: 20, dayPeaks: [20, 0, 0, 0, 0, 0, 0], foodSpent: 0,
@@ -715,17 +728,17 @@ function messageMarkup([source, body]) {
 }
 function renderIntro() {
   return `<section class="hero"><div class="hero-content">
-    <p class="eyebrow">七天 · 一次选择接着一次选择</p>
+    <p class="eyebrow"><span aria-hidden="true">📆</span> 七天 · 一次选择接着一次选择</p>
     <h1>月底还剩<br>三百块</h1>
     <p class="hero-lead">还有七天，你会怎样安排这一周？</p>
-    <div class="hero-stats"><span>余额 ¥300</span><span>疲劳 20%</span><span>最终提交 周日 23:59</span></div>
+    <div class="hero-stats"><span><span aria-hidden="true">💰</span> 余额 ¥300</span><span><span aria-hidden="true">🔋</span> 疲劳 20%</span><span><span aria-hidden="true">⏰</span> 最终提交 周日 23:59</span></div>
     <button class="primary-button" type="button" data-choice="start">开始这一周</button>
     <p class="hero-note">阅读约 15–25 分钟 · 可随时继续本局进度</p>
     <div class="teaser"><strong>周一 08:10 · 宿舍</strong><p>电脑没有亮。项目群的消息却已经到了。</p></div>
   </div></section>`;
 }
 function renderStory(info) {
-  return `<div class="story-page"><div class="story-header"><div class="story-day">${info.day}</div><h1 class="story-title">${info.title}</h1><div class="story-time">${info.time}</div></div>
+  return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${DAY_MOTIFS[s.day].icon}</span> ${info.day}</div><h1 class="story-title">${info.title}</h1><div class="story-time">${info.time}</div></div>
     <section class="story-card"><div class="story-copy">${info.body.map(p => `<p>${p}</p>`).join("")}</div>${(info.messages || []).map(messageMarkup).join("")}${info.extra || ""}</section>
     ${s.notice && s.stage !== "funds" ? `<div class="warning">${s.notice}</div>` : ""}
     <p class="section-label">下一步</p><div class="choices">${(info.choices || []).map(choiceMarkup).join("")}</div>
@@ -763,7 +776,7 @@ function renderEnding() {
   const outcome = s.ending || "本周记录";
   const paid = s.ledger.filter(item => item.delta < 0 && !item.label.includes("早餐") && !item.label.includes("午餐") && !item.label.includes("晚餐"));
   const rels = relationCards();
-  return `<div class="story-page"><div class="story-header"><div class="story-day">本局结局 · ${DAYS[s.day]} ${s.time}</div><h1 class="result-title">${outcome}</h1><p class="result-copy">${ENDINGS[outcome] || ""}</p></div>
+  return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${ENDING_ICONS[outcome] || "📖"}</span> 本局结局 · ${DAYS[s.day]} ${s.time}</div><h1 class="result-title">${outcome}</h1><p class="result-copy">${ENDINGS[outcome] || ""}</p></div>
     <section class="story-card"><p class="eyebrow">我的这一周${outcome === "停止响应" ? " · 截至中断时" : ""}</p>
       <div class="record-grid">
         <div class="record-card"><h3>账本</h3><p>实际余额 ${money(s.cash)}<br>已付餐费 ${money(s.foodSpent)}<br>本人委托实际收入 ${money(s.earnings)}<br>其他实际支出 ${money(-paid.reduce((n, item) => n + item.delta, 0))}${s.advanceUsed ? "<br>下周生活费已提前使用100元，下次少100元" : ""}</p></div>
@@ -804,9 +817,9 @@ function renderTheory() {
 function renderSidebar() {
   const remaining = s.cash - reserve();
   $("hud").innerHTML = `<div class="hud-grid">
-    <div class="stat"><span class="stat-label">实际余额</span><span class="stat-value">${money(s.cash)}</span></div>
+    <div class="stat"><span class="stat-label"><span aria-hidden="true">💰</span> 实际余额</span><span class="stat-value">${money(s.cash)}</span></div>
     <div class="stat"><span class="stat-label">餐费预留之外</span><span class="stat-value small ${remaining < 0 ? "warn" : ""}">${remaining >= 0 ? money(remaining) : `缺 ${money(-remaining)}`}</span></div>
-    <div class="stat wide"><span class="stat-label">疲劳 · 达到100%将立即中断</span><span class="stat-value ${s.fatigue >= 75 ? "warn" : ""}">${s.fatigue}%</span><div class="fatigue-track"><div class="fatigue-fill ${s.fatigue >= 75 ? "high" : ""}" style="width:${s.fatigue}%"></div></div></div>
+    <div class="stat wide"><span class="stat-label"><span aria-hidden="true">🔋</span> 疲劳 · 达到100%将立即中断</span><span class="stat-value ${s.fatigue >= 75 ? "warn" : ""}">${s.fatigue}%</span><div class="fatigue-track"><div class="fatigue-fill ${s.fatigue >= 75 ? "high" : ""}" style="width:${s.fatigue}%"></div></div></div>
   </div>`;
   $("schedule").innerHTML = `<div class="aside-section"><h2 class="aside-heading">日程与进度</h2>
     <div class="aside-line"><span>当前</span><strong>${s.stage === "intro" ? "周一开始前" : `${DAYS[s.day]} ${s.time}`}</strong></div>
@@ -821,11 +834,87 @@ function renderSidebar() {
   $("advance-button").classList.toggle("hidden", s.day < 3 || s.advanceUsed || ["intro", "ending", "theory"].includes(s.stage));
   $("day-chip").textContent = s.stage === "intro" ? "七天的故事" : s.stage === "ending" ? "本周结束" : s.stage === "theory" ? "课堂分析" : `${DAYS[s.day]} · 第 ${s.day + 1}/7 天`;
 }
-function render() {
-  $("main").innerHTML = s.stage === "intro" ? renderIntro() : s.stage === "ending" ? renderEnding() : s.stage === "theory" ? renderTheory() : renderStory(scene());
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const MOTION = { sceneExit: 170, day: 1500, ending: 1900, overlayExit: 240 };
+let renderedView = null;
+let transitionTimer = null;
+let inTransition = false;
+let overlayExiting = false;
+
+function focusScene() {
+  const heading = $("main").querySelector("h1");
+  if (heading) {
+    heading.setAttribute("tabindex", "-1");
+    heading.focus({ preventScroll: true });
+  }
+}
+function draw(animate = false) {
+  const main = $("main");
+  main.innerHTML = s.stage === "intro" ? renderIntro() : s.stage === "ending" ? renderEnding() : s.stage === "theory" ? renderTheory() : renderStory(scene());
+  if (animate) main.firstElementChild?.classList.add("scene-enter");
   renderSidebar();
+  renderedView = { stage: s.stage, day: s.day, theoryPage: s.theoryPage };
   save();
   window.scrollTo({ top: 0, behavior: "auto" });
+}
+function finishOverlay() {
+  if (!inTransition || overlayExiting) return;
+  overlayExiting = true;
+  clearTimeout(transitionTimer);
+  draw(true);
+  const overlay = $("scene-transition");
+  overlay.classList.remove("is-visible");
+  transitionTimer = setTimeout(() => {
+    overlay.classList.add("hidden");
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("is-transitioning");
+    inTransition = false;
+    overlayExiting = false;
+    focusScene();
+  }, MOTION.overlayExit);
+}
+function showOverlay(kind) {
+  const overlay = $("scene-transition");
+  const isEnding = kind === "ending";
+  const motif = DAY_MOTIFS[s.day];
+  const duration = isEnding ? MOTION.ending : MOTION.day;
+  $("transition-symbol").textContent = isEnding ? (ENDING_ICONS[s.ending] || "📖") : motif.icon;
+  $("transition-kicker").textContent = isEnding ? "本周结算" : `第 ${s.day + 1} / 7 天`;
+  $("transition-title").textContent = isEnding ? "这一周，到这里了" : DAYS[s.day];
+  $("transition-detail").textContent = isEnding ? "正在整理这一路的选择与记录" : motif.line;
+  overlay.dataset.kind = kind;
+  overlay.style.setProperty("--progress-duration", `${duration}ms`);
+  overlay.classList.remove("hidden", "is-visible");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("is-transitioning");
+  requestAnimationFrame(() => {
+    if (inTransition && !overlayExiting) {
+      overlay.classList.add("is-visible");
+      $("skip-transition").focus({ preventScroll: true });
+    }
+  });
+  transitionTimer = setTimeout(finishOverlay, duration);
+}
+function render() {
+  if (inTransition) return;
+  const previous = renderedView;
+  const changed = previous && (previous.stage !== s.stage || previous.day !== s.day || previous.theoryPage !== s.theoryPage);
+  if (!changed || reducedMotion.matches) {
+    draw();
+    if (changed) focusScene();
+    return;
+  }
+  save();
+  inTransition = true;
+  if (s.stage === "ending" && previous.stage !== "ending") { showOverlay("ending"); return; }
+  if (s.stage !== "intro" && (s.day !== previous.day || previous.stage === "intro")) { showOverlay("day"); return; }
+  $("main").classList.add("scene-leaving");
+  transitionTimer = setTimeout(() => {
+    $("main").classList.remove("scene-leaving");
+    draw(true);
+    inTransition = false;
+    focusScene();
+  }, MOTION.sceneExit);
 }
 function selectChoice(id) {
   s.notice = "";
@@ -872,6 +961,7 @@ function openRecord(index) {
 }
 function closeSidebar() { $("sidebar").classList.remove("open"); $("overlay").classList.add("hidden"); $("menu-button").setAttribute("aria-expanded", "false"); }
 document.addEventListener("click", event => {
+  if (inTransition) return;
   const choice = event.target.closest("[data-choice]");
   if (choice && !choice.disabled) { selectChoice(choice.dataset.choice); closeSidebar(); return; }
   const record = event.target.closest("[data-record]");
@@ -886,8 +976,10 @@ document.addEventListener("click", event => {
   const page = event.target.closest("[data-theory]");
   if (page) { s.theoryPage = Number(page.dataset.theory); render(); }
 });
-$("advance-button").addEventListener("click", advanceCash);
+$("skip-transition").addEventListener("click", finishOverlay);
+$("advance-button").addEventListener("click", () => { if (!inTransition) advanceCash(); });
 $("restart-button").addEventListener("click", () => {
+  if (inTransition) return;
   if (!window.confirm("重新开始会清除本局进度；已解锁的成就收藏仍会保留。确定吗？")) return;
   s = DEFAULT_STATE(); closeSidebar(); render();
 });
@@ -895,5 +987,5 @@ $("menu-button").addEventListener("click", () => { $("sidebar").classList.add("o
 $("close-sidebar").addEventListener("click", closeSidebar);
 $("overlay").addEventListener("click", closeSidebar);
 $("close-dialog").addEventListener("click", () => $("detail-dialog").close());
-$("brand").addEventListener("click", event => { event.preventDefault(); render(); });
+$("brand").addEventListener("click", event => { event.preventDefault(); if (!inTransition) render(); });
 render();
