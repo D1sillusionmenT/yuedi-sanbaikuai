@@ -95,6 +95,8 @@ a { color: var(--accent); }
 .primary-button:hover:not(:disabled) { background: #f5d197; }
 .hero-start { width: 100%; min-height: 60px; border-radius: 12px; background: #f5b82e; color: #102139; font-size: 21px; box-shadow: 0 12px 30px #0007; }
 .hero-start:hover:not(:disabled) { background: #ffd065; }
+.hero-collection { display: flex; justify-content: center; align-items: center; gap: var(--space-2); margin-top: var(--space-2); color: var(--text); background: #0a1d35e8; border-color: #557299a8; border-radius: var(--radius-sm); text-align: center; }
+.collection-count { color: var(--accent); font-variant-numeric: tabular-nums; }
 .hero-note { color: var(--quiet); font-size: 13px; margin: 13px 0 0; }
 .teaser { display: grid; grid-template-columns: 38% 1fr; align-items: stretch; min-height: 150px; margin-top: 14px; border: 1px solid #557299a8; border-radius: 14px; overflow: hidden; background: #0a1d35e8; box-shadow: 0 8px 28px #0006; }
 .teaser-art { min-width: 0; background: linear-gradient(90deg, transparent 75%, #0a1d35e8), url("night-desk-v2.png") 41% 74% / auto 195% no-repeat; }
@@ -139,6 +141,13 @@ a { color: var(--accent); }
 .inline-button { background: none; border: 0; color: var(--accent); padding: 0; text-decoration: underline; text-underline-offset: 3px; }
 .result-title { font-size: clamp(42px, 7vw, 70px); margin: 10px 0 20px; }
 .result-copy { font-size: 17px; line-height: 1.9; color: var(--text); }
+.ending-actions { margin-bottom: var(--space-4); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.ending-actions > p { margin: 0 0 var(--space-3); color: var(--text); line-height: 1.7; }
+.ending-actions > small { display: block; margin-top: var(--space-2); color: var(--quiet); font-size: 12px; line-height: 1.7; }
+.ending-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.ending-buttons .primary-button { padding-inline: var(--space-2); }
+.ending-buttons .subtle-button { font-size: 16px; text-align: center; }
+.result-links { margin-top: var(--space-4); }
 .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .pill { color: var(--muted); border: 1px solid var(--line); background: #0e1b2b; border-radius: 99px; padding: 7px 11px; font-size: 12px; }
 .theory-page { max-width: var(--content-width); margin: 0 auto; }
@@ -153,6 +162,29 @@ a { color: var(--accent); }
 .dialog-close { float: right; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-raised); color: var(--text); width: 42px; height: 42px; font-size: 24px; }
 .detail-dialog h2 { margin-top: 0; }
 .detail-dialog p { color: var(--muted); line-height: 1.85; }
+.record-card .achievement-hint, .achievement-hint { margin: 0 0 var(--space-2); color: var(--quiet); font-size: 12px; line-height: 1.7; }
+.achievement-pill { min-height: 44px; color: var(--accent); font: inherit; font-size: 13px; }
+.achievement-pill:hover { border-color: var(--accent); background: var(--surface-raised); }
+.collection-summary { margin: var(--space-3) 0; }
+.collection-summary > span { display: block; margin-bottom: var(--space-1); color: var(--accent); font-size: 14px; }
+.achievement-list { display: grid; gap: var(--space-2); }
+.achievement-card { width: 100%; display: flex; align-items: center; gap: var(--space-3); min-height: 80px; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); text-align: left; }
+.achievement-card:hover { border-color: var(--accent); }
+.achievement-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: var(--radius-sm); background: var(--surface-soft); font-size: 25px; }
+.achievement-card-copy { display: grid; gap: var(--space-1); }
+.achievement-card-copy strong { font-size: 16px; }
+.achievement-card-copy small { color: var(--success); font-size: 12px; }
+.achievement-arrow { margin-left: auto; color: var(--quiet); font-size: 24px; }
+.collection-empty { padding: var(--space-5) var(--space-3); border: 1px dashed var(--line); border-radius: var(--radius-md); text-align: center; }
+.collection-empty > span { font-size: 40px; }
+.collection-empty small { color: var(--quiet); line-height: 1.7; }
+.detail-dialog .achievement-unlocked { color: var(--success); font-size: 12px; }
+.achievement-detail { margin: var(--space-3) 0 var(--space-4); }
+.achievement-condition strong { color: var(--text); font-size: 14px; }
+.detail-dialog .achievement-insight { padding-top: var(--space-3); border-top: 1px solid var(--line); color: var(--quiet); font-size: 13px; line-height: 1.8; }
+.achievement-insight cite { display: block; margin-top: var(--space-1); font-size: 12px; font-style: normal; }
+.achievement-insight a { color: var(--quiet); text-decoration-color: var(--line); text-underline-offset: 3px; }
+.achievement-insight a:hover { color: var(--accent); }
 
 body.is-transitioning { overflow: hidden; }
 .scene-transition { position: fixed; inset: 0; z-index: 12; display: grid; place-items: center; padding: 24px 18px calc(24px + env(safe-area-inset-bottom)); background: radial-gradient(circle at 74% 22%, #eac0782b, transparent 34%), linear-gradient(145deg, #0b1727, #172a3e 58%, #0c1727); opacity: 0; pointer-events: none; transition: opacity var(--motion-overlay-exit) ease-in-out; }

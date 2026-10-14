@@ -14,6 +14,17 @@ const ENDING_ICONS = {
   "结束了？": "🌙", "极限过载": "🔋", "最佳小队": "🤝",
   "午夜钟鸣": "🕛", "停止响应": "💤"
 };
+const ACHIEVEMENTS = [
+  { name: "低电量", icon: "🪫", condition: "本局疲劳第一次达到或超过50%。", insight: "劳动包含人的脑力和体力的耗费。", source: "《资本论》第一卷·商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" },
+  { name: "后台堆积", icon: "📚", condition: "本局疲劳第一次达到或超过75%。", insight: "劳动时间的延长，会碰到劳动者身体承受能力的界限。", source: "《资本论》第一卷·工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
+  { name: "请保存工作", icon: "💾", condition: "本局疲劳第一次达到或超过90%。", insight: "劳动者还需要留出满足精神生活与社会交往的时间。", source: "《资本论》第一卷·工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
+  { name: "重新上线", icon: "🌿", condition: "本局曾达到75%疲劳，随后在未中断的情况下恢复到50%以下。", insight: "劳动能力的持续发挥，需要休息和生活资料来恢复消耗。", source: "《资本论》第一卷·工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
+  { name: "友军支援", icon: "🤝", condition: "实际履行至少一项借用设备、交换分工或生活互助；仅看过提议不算。", insight: "有计划的共同劳动，能够形成个人单干所没有的生产力。", source: "《资本论》第一卷·协作", url: "https://www.marxists.org/chinese/marx/capital/11.htm" },
+  { name: "专业人士", icon: "🛠️", condition: "本人完成并交付100元完整委托或40元较小委托；此时可以仍待验收付款。", insight: "具体劳动通过一定方式，生产能满足他人需要的使用价值。", source: "《资本论》第一卷·商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" },
+  { name: "补给到位", icon: "🧾", condition: "本人网页委托或另约的活动介绍稿验收后，实际收到至少一笔报酬；预支生活费不算。", insight: "商品价值的实现，需要完成商品向货币的转化。", source: "《资本论》第一卷·货币或商品流通", url: "https://www.marxists.org/chinese/marx/capital/03.htm" },
+  { name: "最后一击", icon: "⏳", condition: "采用周日21:00和22:50的两个电脑时段，在23:50完成核对上传，且未因疲劳中断。", insight: "有目的的劳动，还需要相应的劳动资料来实现目标。", source: "《资本论》第一卷·劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
+  { name: "穿透迷雾", icon: "🔎", condition: "周五依次读完商户用途、制作者工作和验收状态三个记录；本人接单或程越接单均可。", insight: "商品形式使生产者之间的社会联系，表现为物与物的关系。", source: "《资本论》第一卷·商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" }
+];
 const DEFAULT_STATE = () => ({
   version: 1, stage: "intro", day: 0, time: "", cash: 300, fatigue: 20,
   maxFatigue: 20, dayPeaks: [20, 0, 0, 0, 0, 0, 0], foodSpent: 0,
@@ -36,6 +47,17 @@ function loadState() {
   return DEFAULT_STATE();
 }
 let s = loadState();
+function readCollection() {
+  try {
+    const value = JSON.parse(localStorage.getItem(COLLECTION_KEY) || "[]");
+    return Array.isArray(value) ? value.filter(name => typeof name === "string") : [];
+  } catch (_) { return []; }
+}
+const achievementCollection = new Set([...readCollection(), ...s.achievements]);
+function saveCollection() {
+  try { localStorage.setItem(COLLECTION_KEY, JSON.stringify([...achievementCollection])); } catch (_) {}
+}
+function collectedAchievements() { return ACHIEVEMENTS.filter(item => achievementCollection.has(item.name)); }
 const $ = (id) => document.getElementById(id);
 const money = (n) => `¥${n}`;
 const clamp = (n) => Math.max(0, Math.min(100, n));
@@ -58,10 +80,8 @@ function entry(label, delta, day = s.day, time = s.time) {
 }
 function unlock(name) {
   if (!s.achievements.includes(name)) s.achievements.push(name);
-  try {
-    const collection = JSON.parse(localStorage.getItem(COLLECTION_KEY) || "[]");
-    if (!collection.includes(name)) localStorage.setItem(COLLECTION_KEY, JSON.stringify([...collection, name]));
-  } catch (_) {}
+  achievementCollection.add(name);
+  saveCollection();
 }
 function spend(amount, label, kind = "其他") {
   if (s.cash < amount) { note(`当前余额不足以支付 ${money(amount)}。已确认的下周生活费预支可在右侧账本办理。`); return false; }
@@ -737,7 +757,8 @@ function renderIntro() {
         <div class="hero-stat"><span class="hero-stat-icon" aria-hidden="true">🔋</span><span class="hero-stat-label">疲劳</span><strong>20%</strong></div>
         <div class="hero-stat"><span class="hero-stat-icon" aria-hidden="true">🗓️</span><span class="hero-stat-label">最终提交</span><strong>周日 23:59</strong></div>
       </div>
-      <button class="primary-button hero-start" type="button" data-choice="start">开始这一周</button>
+      <button class="primary-button hero-start" type="button" data-action="replay">开始这一周</button>
+      <button class="subtle-button hero-collection" type="button" data-action="collection"><span aria-hidden="true">🏅</span> 查看以往成就 <span class="collection-count">${collectedAchievements().length} / ${ACHIEVEMENTS.length}</span></button>
       <div class="teaser"><div class="teaser-art" aria-hidden="true"></div><div class="teaser-copy"><strong>周一 08:10 · 宿舍</strong><p>电脑没有亮。项目群的消息却已经到了。</p><small>阅读约 15–25 分钟</small></div></div>
       <p class="theory-whisper hero-whisper"><span>马原 · 观察角</span> 实践总是在一定的现实条件下展开。</p>
     </div>
@@ -796,18 +817,19 @@ function renderEnding() {
   const paid = s.ledger.filter(item => item.delta < 0 && !item.label.includes("早餐") && !item.label.includes("午餐") && !item.label.includes("晚餐"));
   const rels = relationCards();
   return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${ENDING_ICONS[outcome] || "📖"}</span> 本局结局 · ${DAYS[s.day]} ${s.time}</div><h1 class="result-title">${outcome}</h1><p class="result-copy">${ENDINGS[outcome] || ""}</p></div>
+    <section class="ending-actions" aria-label="本局结束后的选择"><p>这一周结束了。换个选择，会走到哪里？</p><div class="ending-buttons"><button class="primary-button" type="button" data-action="replay"><span aria-hidden="true">↻</span> 再来一局</button><button class="subtle-button" type="button" data-action="home"><span aria-hidden="true">⌂</span> 返回首页</button></div><small>新一局从周一和300元开始，已解锁成就会保留。</small></section>
     <section class="story-card"><p class="eyebrow">我的这一周${outcome === "停止响应" ? " · 截至中断时" : ""}</p>
       <div class="record-grid">
         <div class="record-card"><h3>账本</h3><p>实际余额 ${money(s.cash)}<br>已付餐费 ${money(s.foodSpent)}<br>本人委托实际收入 ${money(s.earnings)}<br>其他实际支出 ${money(-paid.reduce((n, item) => n + item.delta, 0))}${s.advanceUsed ? "<br>下周生活费已提前使用100元，下次少100元" : ""}</p></div>
         <div class="record-card"><h3>日程与身体</h3><p>当前疲劳 ${s.fatigue}% · 本局峰值 ${s.maxFatigue}%<br>课程基础功能 ${s.courseHours}/4 小时<br>最终版修正：${s.finalFix ? "已完成" : "未完成"}<br>最终版上传：${s.uploaded ? s.uploadTime : "未完成"}</p></div>
         <div class="record-card"><h3>自己的生活</h3><p>${s.personal.length ? s.personal.join("；") : "本局没有新增个人活动记录"}。${s.birthday === "full" ? "参加完整生日晚餐。" : s.birthday === "short" ? "短暂参加生日聚餐。" : s.birthday === "alone" ? "生日当晚未参加聚餐。" : ""}</p></div>
-        <div class="record-card"><h3>本局成就</h3><div class="pill-row">${s.achievements.length ? s.achievements.map(a => `<span class="pill">${a}</span>`).join("") : "<span class='pill'>暂无</span>"}</div></div>
+        <div class="record-card"><h3>本局成就</h3><p class="achievement-hint">点击成就查看触发条件</p><div class="pill-row">${s.achievements.length ? s.achievements.map(achievementButton).join("") : "<span class='pill'>暂无</span>"}</div></div>
       </div>
       <div class="divider"></div><p class="eyebrow">这一周联系了谁</p>
       <div class="record-grid">${rels.map(r => `<div class="record-card"><h3>${r.title}</h3><p>${r.text}</p></div>`).join("")}</div>
       <div class="divider"></div><p>这些卡片只汇总本局已发生的交易、工作与协作。结局不是对你的道德或理论理解评分。</p>
     </section>
-    <div class="choices" style="margin-top:24px"><button class="choice" type="button" data-action="theory"><span class="choice-title">进入课堂分析</span><span class="choice-detail">用本局经历讨论使用价值、商品交换与商品拜物教。</span></button><button class="choice" type="button" data-action="journal"><span class="choice-title">查看本局完整记录</span><span class="choice-detail">按发生顺序回看收支、劳动、休息与协作。</span></button></div>
+    <div class="choices result-links"><button class="choice" type="button" data-action="theory"><span class="choice-title">进入课堂分析</span><span class="choice-detail">用本局经历讨论使用价值、商品交换与商品拜物教。</span></button><button class="choice" type="button" data-action="journal"><span class="choice-title">查看本局完整记录</span><span class="choice-detail">按发生顺序回看收支、劳动、休息与协作。</span></button><button class="choice" type="button" data-action="collection"><span class="choice-title">查看以往成就</span><span class="choice-detail">点击已解锁徽章，回看触发条件与相关知识点。</span></button></div>
   </div>`;
 }
 const THEORY = [
@@ -961,8 +983,38 @@ function selectChoice(id) {
   render();
 }
 function openDialog(title, body) {
-  $("dialog-content").innerHTML = `<h2>${title}</h2>${body}`;
-  $("detail-dialog").showModal();
+  const dialog = $("detail-dialog");
+  const wasOpen = dialog.open;
+  $("dialog-content").innerHTML = `<h2 id="dialog-title" tabindex="-1">${title}</h2>${body}`;
+  if (!wasOpen) dialog.showModal();
+  dialog.scrollTop = 0;
+  if (wasOpen) $("dialog-title").focus({ preventScroll: true });
+}
+function achievementButton(name) {
+  const item = ACHIEVEMENTS.find(a => a.name === name);
+  return item ? `<button class="pill achievement-pill" type="button" data-achievement="${item.name}" aria-label="${item.name}，查看触发条件">${item.icon} ${item.name}</button>` : "";
+}
+function openAchievements() {
+  const unlocked = collectedAchievements();
+  const cards = unlocked.map(item => `<button class="achievement-card" type="button" data-achievement="${item.name}" aria-label="${item.name}，查看触发条件"><span class="achievement-icon" aria-hidden="true">${item.icon}</span><span class="achievement-card-copy"><strong>${item.name}</strong><small>已解锁</small></span><span class="achievement-arrow" aria-hidden="true">›</span></button>`).join("");
+  openDialog("以往成就", `<div class="collection-summary"><span>已解锁 ${unlocked.length} / ${ACHIEVEMENTS.length}</span><p class="achievement-hint">点击成就查看触发条件</p></div>${unlocked.length ? `<div class="achievement-list">${cards}</div>` : `<div class="collection-empty"><span aria-hidden="true">🏅</span><p>还没有解锁成就。</p><small>开始这一周，留下自己的第一枚徽章。</small></div>`}<p class="hero-note">成就累计保存在当前浏览器，再来一局仍会保留。</p>`);
+}
+function openAchievement(name) {
+  const item = ACHIEVEMENTS.find(a => a.name === name);
+  if (!item || !achievementCollection.has(name)) return;
+  openDialog(`${item.icon} ${item.name}`, `<p class="achievement-unlocked">已解锁</p><div class="achievement-detail"><p class="achievement-condition"><strong>触发条件</strong><br>${item.condition}</p><p class="achievement-insight">${item.insight}<cite>— <a href="${item.url}" target="_blank" rel="noopener noreferrer">${item.source}</a></cite></p></div><button class="subtle-button" type="button" data-action="collection">返回以往成就</button>`);
+}
+function restartRun(startImmediately = false) {
+  if (inTransition) return;
+  const active = !["intro", "ending", "theory"].includes(s.stage);
+  if (active && !window.confirm("重新开始会清除本局进度；已解锁的成就收藏仍会保留。确定吗？")) return;
+  s.achievements.forEach(name => achievementCollection.add(name));
+  saveCollection();
+  s = DEFAULT_STATE();
+  $("detail-dialog").close();
+  closeSidebar();
+  if (startImmediately) startMonday();
+  render();
 }
 function openJournal() {
   const rows = s.journal.map(item => `<div class="message"><span class="message-source">${DAYS[item.day]} ${item.time || ""} · ${item.kind}</span><p>${item.text}</p></div>`).join("");
@@ -987,9 +1039,14 @@ document.addEventListener("click", event => {
   if (choice && !choice.disabled) { selectChoice(choice.dataset.choice); closeSidebar(); return; }
   const record = event.target.closest("[data-record]");
   if (record && !record.disabled) { openRecord(Number(record.dataset.record)); return; }
+  const achievement = event.target.closest("[data-achievement]");
+  if (achievement) { openAchievement(achievement.dataset.achievement); return; }
   const action = event.target.closest("[data-action]");
   if (action) {
     if (action.dataset.action === "journal") openJournal();
+    if (action.dataset.action === "collection") openAchievements();
+    if (action.dataset.action === "home") restartRun();
+    if (action.dataset.action === "replay") restartRun(true);
     if (action.dataset.action === "theory") { s.stage = "theory"; s.theoryPage = 0; render(); }
     if (action.dataset.action === "ending") { s.stage = "ending"; render(); }
     return;
@@ -999,11 +1056,7 @@ document.addEventListener("click", event => {
 });
 $("skip-transition").addEventListener("click", finishOverlay);
 $("advance-button").addEventListener("click", () => { if (!inTransition) advanceCash(); });
-$("restart-button").addEventListener("click", () => {
-  if (inTransition) return;
-  if (!window.confirm("重新开始会清除本局进度；已解锁的成就收藏仍会保留。确定吗？")) return;
-  s = DEFAULT_STATE(); closeSidebar(); render();
-});
+$("restart-button").addEventListener("click", () => restartRun());
 $("menu-button").addEventListener("click", () => { $("sidebar").classList.add("open"); $("overlay").classList.remove("hidden"); $("menu-button").setAttribute("aria-expanded", "true"); });
 $("close-sidebar").addEventListener("click", closeSidebar);
 $("overlay").addEventListener("click", closeSidebar);
