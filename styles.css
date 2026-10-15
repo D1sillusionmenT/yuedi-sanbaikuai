@@ -24,6 +24,8 @@
   --sidebar-width: 330px;
   --task-track-height: 8px;
   --task-text-size: 13px;
+  --mobile-topbar-height: 64px;
+  --mobile-status-height: 48px;
   --motion-scene-enter: 560ms;
   --motion-scene-exit: 250ms;
   --motion-overlay-exit: 440ms;
@@ -41,6 +43,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outlin
 a { color: var(--accent); }
 .hidden { display: none !important; }
 .mobile-only { display: none; }
+.storage-notice { max-width: 1184px; margin: var(--space-3) auto 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--danger); border-radius: var(--radius-sm); color: var(--danger); line-height: 1.7; }
+.quick-status { border: 0; color: var(--muted); background: var(--surface); }
+body.is-sidebar-open { overflow: hidden; }
 
 .app-shell { min-height: 100svh; }
 .topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 0 max(28px, calc((100vw - 1240px)/2)); border-bottom: 1px solid #ffffff18; background: #0b1624be; backdrop-filter: blur(16px); position: sticky; top: 0; z-index: 5; }
@@ -188,7 +193,7 @@ a { color: var(--accent); }
 .overlay { position: fixed; inset: 0; z-index: 7; background: #0009; }
 .detail-dialog { width: min(600px, calc(100vw - 30px)); max-height: min(85svh, 800px); overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); color: var(--text); padding: var(--space-4); box-shadow: 0 25px 80px #000a; }
 .detail-dialog::backdrop { background: #000a; }
-.dialog-close { float: right; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-raised); color: var(--text); width: 42px; height: 42px; font-size: 24px; }
+.dialog-close { float: right; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--text); width: 44px; height: 44px; font-size: 24px; }
 .detail-dialog h2 { margin-top: 0; }
 .detail-dialog p { color: var(--muted); line-height: 1.85; }
 .record-card .achievement-hint, .achievement-hint { margin: 0 0 var(--space-2); color: var(--quiet); font-size: 12px; line-height: 1.7; }
@@ -234,7 +239,13 @@ body.is-transitioning { overflow: hidden; }
 @media (max-width: 920px) {
   .layout { grid-template-columns: 1fr; padding: 24px 18px 80px; }
   .topbar { padding: 0 18px; height: 64px; }
+  body:not(.is-intro) .topbar { padding-top: env(safe-area-inset-top); height: calc(var(--mobile-topbar-height) + env(safe-area-inset-top)); }
   .mobile-only { display: grid; place-items: center; }
+  .quick-status { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); position: sticky; top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top)); z-index: 4; width: 100%; min-height: var(--mobile-status-height); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); font-size: 12px; }
+  .quick-status span { white-space: nowrap; }
+  .quick-status b { color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .quick-status .status-risk, .quick-status .status-risk b { color: var(--danger); }
+  .storage-notice { margin: var(--space-2) var(--space-3) 0; }
   .sidebar { display: none; position: fixed; inset: auto 0 0; top: auto; z-index: 8; max-height: 87svh; border-radius: 22px 22px 0 0; padding: 22px 18px calc(18px + env(safe-area-inset-bottom)); }
   .sidebar.open { display: grid; }
   .hero { min-height: min(900px, calc(100svh - 120px)); }

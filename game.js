@@ -52,18 +52,60 @@ const DEFAULT_STATE = () => ({
   ending: null, pendingMeal: null, theoryPage: 0, notice: ""
 });
 
+const SAVE_STAGES = new Set(["intro", "monDevice", "monEvening", "tueGift", "tueDinner", "wedCommission", "wedSwap", "thuCopy", "thuDinner", "friDinner", "friMobile", "satPersonal", "satCoord", "sunDevice", "sunPersonal", "sunExecute", "funds", "ending", "theory"]);
+let storageNotice = "";
+function validSave(value) {
+  if (!value || ![1, 2].includes(value.version) || !SAVE_STAGES.has(value.stage)) return false;
+  const initial = DEFAULT_STATE();
+  for (const [key, fallback] of Object.entries(initial)) {
+    if (value[key] === undefined) continue;
+    if (typeof fallback === "number" && (!Number.isFinite(value[key]) || value[key] < 0)) return false;
+    if (typeof fallback === "string" && typeof value[key] !== "string") return false;
+    if (typeof fallback === "boolean" && typeof value[key] !== "boolean") return false;
+    if (Array.isArray(fallback) && !Array.isArray(value[key])) return false;
+  }
+  if (value.day !== undefined && (!Number.isInteger(value.day) || value.day > 6)) return false;
+  if (value.fatigue > 100 || value.courseHours > 4 || value.mobileHours > 3) return false;
+  const dayRecord = item => item && Number.isInteger(item.day) && item.day >= 0 && item.day < 7;
+  if (value.achievements?.some(name => typeof name !== "string")) return false;
+  if (value.personal?.some(text => typeof text !== "string")) return false;
+  if (value.ledger?.some(item => !dayRecord(item) || typeof item.label !== "string" || !Number.isFinite(item.delta))) return false;
+  if (value.journal?.some(item => !dayRecord(item) || typeof item.text !== "string" || typeof item.kind !== "string" || typeof item.time !== "string")) return false;
+  if (value.collabs?.some(item => !dayRecord(item) || typeof item.id !== "string" || typeof item.text !== "string")) return false;
+  if (value.dayPeaks && (value.dayPeaks.length !== 7 || value.dayPeaks.some(n => !Number.isFinite(n) || n < 0 || n > 100))) return false;
+  if (value.hiddenReads && (value.hiddenReads.length !== 3 || value.hiddenReads.some(n => typeof n !== "boolean"))) return false;
+  if (value.paidMeals !== undefined && (!value.paidMeals || typeof value.paidMeals !== "object" || Array.isArray(value.paidMeals) || Object.values(value.paidMeals).some(n => !Number.isFinite(n) || n <= 0))) return false;
+  if (value.task !== undefined && (!value.task || !Array.isArray(value.task.preparations) || value.task.preparations.some(item => !dayRecord(item) || !TASK_PREPARATIONS.some(prep => prep.id === item.id)))) return false;
+  if (value.task?.demonstrated !== undefined && typeof value.task.demonstrated !== "boolean") return false;
+  if (["ending", "theory"].includes(value.stage) && !ENDING_CODES[value.ending]) return false;
+  if (value.stage === "funds" && (!value.pendingMeal || !dayRecord(value.pendingMeal) || !Number.isFinite(value.pendingMeal.amount) || !["friAfterDinner", "satAfterBreakfast", "satAfterLunch", "satAfterDinner", "sunAfterBreakfast", "sunAfterLunch", "sunAfterDinner", "thuAfterDinner"].includes(value.pendingMeal.resume))) return false;
+  return true;
+}
+
 function loadState() {
+  let raw = null;
   try {
-    const value = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (value && [1, 2].includes(value.version) && typeof value.stage === "string") {
+    raw = localStorage.getItem(SAVE_KEY);
+    if (raw === null) return DEFAULT_STATE();
+    const value = JSON.parse(raw);
+    if (validSave(value)) {
       const initial = DEFAULT_STATE();
-      return { ...initial, ...value, version: 2,
+      if (value.stage === "intro") return { ...initial, achievements: value.achievements || [] };
+      const state = { ...initial, ...value, version: 2,
         ruleset: value.version === 1 ? "legacy" : value.ruleset || "legacy",
         task: { ...initial.task, ...value.task, preparations: Array.isArray(value.task?.preparations) ? value.task.preparations : [],
           demonstrated: value.task?.demonstrated ?? (value.journal || []).some(item => item.kind === "反馈" && item.day === 5) }
       };
+      if (state.fatigue >= 100) { state.stage = "ending"; state.ending = "停止响应"; }
+      return state;
     }
-  } catch (_) { /* Browsers may deny local storage on a file URL. */ }
+  } catch (_) { /* Invalid JSON and unavailable browser storage both recover below. */ }
+  if (raw !== null) {
+    try {
+      localStorage.setItem(`${SAVE_KEY}-recovery`, raw);
+      storageNotice = "本局存档无法读取，已备份原数据并返回首页；以往成就收藏仍会保留。";
+    } catch (_) { storageNotice = "本局存档无法读取。浏览器也未允许保存备份；请先检查浏览器的存储设置。"; }
+  } else storageNotice = "浏览器未允许本地存储，本次仍可游玩；关闭页面后，进度与成就可能无法保留。";
   return DEFAULT_STATE();
 }
 let s = loadState();
@@ -90,7 +132,12 @@ const reserve = () => {
   }
   return total;
 };
-function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (_) {} }
+function save() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); }
+  catch (_) { storageNotice = "当前进度未能保存。请保留此页面；关闭后，最近的进度与成就可能丢失。"; }
+  $("storage-notice").textContent = storageNotice;
+  $("storage-notice").classList.toggle("hidden", !storageNotice);
+}
 function note(text) { s.notice = text; }
 function log(text, kind = "事件", day = s.day, time = s.time) {
   s.journal.push({ text, kind, day, time });
@@ -104,8 +151,10 @@ function finishPreparation(id, time = s.time) {
   if (!usesTaskRules() || s.task.preparations.some(item => item.id === id)) return;
   const item = TASK_PREPARATIONS.find(record => record.id === id);
   if (!item) return;
-  s.task.preparations.push({ id, day: s.day, time });
-  log(`完成${item.label}；准备与核验 ${preparationProgress()}/10。`, "任务进度", s.day, time);
+  const clock = time.match(/\d{1,2}:\d{2}/g);
+  const completedAt = clock?.length ? clock[clock.length - 1] : time;
+  s.task.preparations.push({ id, day: s.day, time: completedAt });
+  log(`完成${item.label}；准备与核验 ${preparationProgress()}/10。`, "任务进度", s.day, completedAt);
 }
 function taskProgress() {
   const mobileNeed = s.mobileChoice === "self" ? 3 : 1;
@@ -141,7 +190,7 @@ function unlock(name) {
   saveCollection();
 }
 function spend(amount, label, kind = "其他") {
-  if (s.cash < amount) { note(`当前余额不足以支付 ${money(amount)}。已确认的下周生活费预支可在右侧账本办理。`); return false; }
+  if (s.cash < amount) { note(`当前余额不足以支付 ${money(amount)}。已确认的下周生活费预支可在状态面板办理。`); return false; }
   s.cash -= amount;
   entry(label, -amount);
   if (kind === "餐费") s.foodSpent += amount;
@@ -167,6 +216,9 @@ function fatigue(delta, reason, time = s.time) {
   s.maxFatigue = Math.max(s.maxFatigue, s.fatigue);
   s.dayPeaks[s.day] = Math.max(s.dayPeaks[s.day], s.fatigue);
   log(`${reason}：疲劳 ${old}% → ${s.fatigue}%`, "疲劳", s.day, time);
+  // Completion records use the end of the actual work/rest interval.
+  const clock = time.match(/\d{1,2}:\d{2}/g);
+  if (clock?.length) s.time = clock[clock.length - 1];
   if (s.fatigue >= FATIGUE_RULES.lowBattery && !s.achievements.includes("低电量")) unlock("低电量");
   if (old < 75 && s.fatigue >= 75) unlock("后台堆积");
   if (old < 90 && s.fatigue >= 90) unlock("请保存工作");
@@ -174,7 +226,6 @@ function fatigue(delta, reason, time = s.time) {
   if (s.fatigue >= 100) {
     s.ending = "停止响应";
     s.stage = "ending";
-    s.time = time;
     log("消息还在抵达，你已经没有余力回应。本周计划在此中断。", "结局", s.day, time);
     return false;
   }
@@ -215,8 +266,9 @@ function resumeMeal() {
 }
 
 function startMonday() {
-  s.day = 0; s.time = "12:20";
+  s.day = 0; s.time = "08:10";
   payMeal(0, "早餐", 4, "");
+  s.time = "12:20";
   payMeal(0, "午餐", 7, "");
   fatigue(10, "上午课程与起居", "12:20");
   log("维修点报价150元，包含本次故障处理、部件、检测和复测；预计周二下午交付。尚未购买。", "报价");
@@ -602,6 +654,7 @@ function chooseSundayPersonal(id) {
 }
 function sunAfterDinner() {
   if (s.sunPlan === "team") {
+    s.time = "19:00";
     s.finalFix = true;
     collaborate("sunday-team", "队友18:00—19:00实际修好空结果提示；你此前提供了复现步骤，随后负责最终核对上传。", true);
   }
@@ -658,6 +711,16 @@ const projected = (delta) => {
   const result = clamp(s.fatigue + delta);
   return `疲劳 ${s.fatigue}% → ${result}%${result >= 100 ? "；会立即触发停止响应" : ""}`;
 };
+function finalWorkPrediction() {
+  const changes = s.sunPlan === "team" || s.sunPlan === "none" ? [6] : s.sunPlan === "late" ? [6, 8] : s.sunPlan === "roommate" ? [6, -FATIGUE_RULES.restRecovery, 6] : [6, 6];
+  let current = s.fatigue;
+  const values = [current];
+  for (const change of changes) {
+    current = clamp(current + change); values.push(current);
+    if (current === 100) break;
+  }
+  return `疲劳 ${values.map(value => `${value}%`).join(" → ")}${current === 100 ? "；途中达到100%会立即中断" : ""}`;
+}
 function scene() {
   switch (s.stage) {
     case "monDevice": return {
@@ -778,7 +841,7 @@ function scene() {
       body: ["昨天留下的两项最终版工作合计要两小时。队友目前只确认21:00—22:00借你电脑一小时；另一小时需要明确安排。", "室友愿意19:00—20:00借电脑，前提是你16:00—17:00先帮他整理截图。队友还有22:50—23:50的晚间时段，但离23:59只剩九分钟。"],
       choices: [
         ["roommate", "帮室友整理截图，确认19点电脑", `16点手机工作1小时，${projected(6)}；晚上19点修正、21点上传。`],
-        ["late", "确认22:50的最后一小时", `21点修正+6，22:50核对+8；预测末段 ${clamp(s.fatigue + 14)}%，途中达到100会即时中断。`],
+        ["late", "确认22:50的最后一小时", "确认21点修正、22:50核对两个时段。17点仍可安排休息或其他活动，实际疲劳在执行前显示。"],
         ["none", "暂不补第二小时设备", "目前仅够修正或上传其中一项；截止风险已知。"]
       ]
     };
@@ -792,20 +855,19 @@ function scene() {
       ]
     };
     case "sunExecute": {
-      const load = s.sunPlan === "team" ? 6 : s.sunPlan === "late" ? 14 : s.sunPlan === "none" ? 6 : 12;
       const verification = usesTaskRules() && preparationProgress() < 10 ? `准备核验仍缺${10 - preparationProgress()}点，本段不会补验收材料。` : "";
       return {
         day: "第七天 · 周日", title: "日历的最后一格", time: "19:00 · 距截止只剩数小时",
         body: [`晚饭已付。${s.sunPlan === "team" ? "队友已经在18:00—19:00实际修好空结果提示，文件和截图发进群。" : "空结果提示还需要你用电脑修。"}`, "屏幕上同时有课程待办、已确认设备时段和当前疲劳。你可以按计划执行，也可以先停止今晚的工作并告知队友。"],
         choices: [
-        ["work", "按已确认的时段完成", `本段预计疲劳变化 ${s.sunPlan === "roommate" ? "+6、−8、+6" : `+${load}`}；${s.sunPlan === "none" ? "只有一小时，无法完整提交" : s.fatigue + load >= 100 && s.sunPlan !== "roommate" ? "有达到100%的风险，届时立即中断" : "完成后才会出现上传回执"}。${verification}`],
+        ["work", "按已确认的时段完成", `${finalWorkPrediction()}；${s.sunPlan === "none" ? "只有一小时，无法完整提交" : "完成后才会出现上传回执"}。${verification}`],
           ["pause", "暂停这一晚，先休息并告知队友", "不再增加工作；若最终版仍未交，23:59结算未完成。"]
         ]
       };
     }
     case "funds": return {
       day: `${DAYS[s.day]} · 账本`, title: "这笔饭钱要先有来源", time: s.time,
-      body: [`${s.notice} 预计的委托款仍未到账，不能倒填支出。`, "家人此前说明可以把下周生活费100元提前转来一次，下次相应少100元。预留只是提醒，没有从余额里扣过。"],
+      body: [`${s.notice} 这顿饭需要实际余额，预计收入不能提前计入。`, "家人此前说明可以把下周生活费100元提前转来一次，下次相应少100元。预留只是提醒，没有从余额里扣过。"],
       choices: s.advanceUsed ? [] : [["advance", "说明情况，确认预支100元", "转账实际到账后再支付这顿饭；下周生活费相应减少100元。"]]
     };
     default: return null;
@@ -823,12 +885,12 @@ function messageMarkup([source, body]) {
 function taskHint() {
   if (!usesTaskRules()) return "本局沿用开局时的完成条件；新的准备核验要求从下一局启用。";
   const missing = 10 - preparationProgress();
-  if (s.stage === "ending") {
+  if (s.ending) {
     const rows = taskProgress().rows.filter(row => row.value < row.max);
     return rows.length ? `${s.uploaded ? "文件已上传；" : "截至本局结束；"}仍缺：${rows.map(row => row.label).join("、")}。` : "六项必要内容均已完成。";
   }
-  if (s.day === 6 && missing > 0) return `准备核验还缺${missing}点。${s.stage === "sunPersonal" ? `这一小时最多补4点${missing > 4 ? "，补后仍不足10点" : ""}。` : "本段只处理修正与上传，不会新增核验材料。"}`;
-  if (s.day === 5 && missing > 0) return `准备核验还缺${missing}点。今晚可整理复现步骤（最多+4），周日17点可补一次检查（最多+4）；都占用实际时段。`;
+  if (s.day === 6 && missing > 0) return `准备核验还缺${missing}点。${s.stage === "sunExecute" ? "晚上的修正与上传不会新增核验材料。" : `周日17点可补一次检查，最多补4点${missing > 4 ? "，补后仍不足10点" : ""}。`}`;
+  if (s.day === 5 && missing > 0) return `准备核验还缺${missing}点。${s.stage === "satPersonal" || s.stage === "satCoord" ? "今晚可整理复现步骤（最多+4），" : ""}周日17点可补一次检查（最多+4）；都占用实际时段。`;
   if (s.day === 4 && missing > 0) return `准备核验 ${preparationProgress()}/10。周六复现步骤与周日补检查各最多补4点，安排时要同时考虑时间、设备与疲劳。`;
   return "完整交付需要六项必要内容；清单、范围讨论和实际分工会留下可核对的成果。";
 }
@@ -979,6 +1041,8 @@ function renderTheory() {
 function renderSidebar() {
   const remaining = s.cash - reserve();
   const task = taskProgress();
+  $("quick-status").classList.toggle("hidden", ["intro", "theory"].includes(s.stage));
+  $("quick-status").innerHTML = `<span>余额 <b>${money(s.cash)}</b></span><span class="${s.fatigue >= 75 ? "status-risk" : ""}">疲劳 <b>${s.fatigue}%</b></span><span>进度 <b>${task.total}%</b><span aria-hidden="true"> ›</span></span>`;
   $("hud").innerHTML = `<div class="hud-grid">
     <div class="stat"><span class="stat-label"><span aria-hidden="true">💰</span> 实际余额</span><span class="stat-value">${money(s.cash)}</span></div>
     <div class="stat"><span class="stat-label">餐费预留之外</span><span class="stat-value small ${remaining < 0 ? "warn" : ""}">${remaining >= 0 ? money(remaining) : `缺 ${money(-remaining)}`}</span></div>
@@ -1028,15 +1092,17 @@ function finishOverlay() {
   if (!inTransition || overlayExiting) return;
   overlayExiting = true;
   clearTimeout(transitionTimer);
-  draw(true);
   const overlay = $("scene-transition");
   overlay.classList.remove("is-visible");
   transitionTimer = setTimeout(() => {
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
     document.body.classList.remove("is-transitioning");
+    draw(true);
     inTransition = false;
     overlayExiting = false;
+    $("app-shell").inert = false;
+    $("app-shell").removeAttribute("inert");
     focusScene();
   }, MOTION.overlayExit);
 }
@@ -1073,6 +1139,8 @@ function render() {
   }
   save();
   inTransition = true;
+  $("app-shell").inert = true;
+  $("app-shell").setAttribute("inert", "");
   if (s.stage === "ending" && previous.stage !== "ending") { showOverlay("ending"); return; }
   if (s.stage !== "intro" && (s.day !== previous.day || previous.stage === "intro")) { showOverlay("day"); return; }
   $("main").classList.add("scene-leaving");
@@ -1080,6 +1148,8 @@ function render() {
     $("main").classList.remove("scene-leaving");
     draw(true);
     inTransition = false;
+    $("app-shell").inert = false;
+    $("app-shell").removeAttribute("inert");
     focusScene();
   }, MOTION.sceneExit);
 }
@@ -1156,7 +1226,23 @@ function openRecord(index) {
   render();
   openDialog(blocks[index][0], `<p>${blocks[index][1]}</p>${s.hiddenReads.every(Boolean) ? "<p><strong>穿透迷雾</strong>已解锁：同一页，双方分别安排了什么、得到什么、又等到什么时候？</p>" : ""}`);
 }
-function closeSidebar() { $("sidebar").classList.remove("open"); $("overlay").classList.add("hidden"); $("menu-button").setAttribute("aria-expanded", "false"); }
+function openSidebar() {
+  $("sidebar").classList.add("open"); $("overlay").classList.remove("hidden");
+  $("sidebar").setAttribute("role", "dialog"); $("sidebar").setAttribute("aria-modal", "true");
+  $("menu-button").setAttribute("aria-expanded", "true");
+  $("main").inert = true; $("topbar").inert = true; $("quick-status").inert = true;
+  ["main", "topbar", "quick-status"].forEach(id => $(id).setAttribute("inert", ""));
+  document.body.classList.add("is-sidebar-open"); $("close-sidebar").focus();
+}
+function closeSidebar(returnFocus = false) {
+  $("sidebar").classList.remove("open"); $("overlay").classList.add("hidden");
+  $("sidebar").removeAttribute("role"); $("sidebar").removeAttribute("aria-modal");
+  $("menu-button").setAttribute("aria-expanded", "false");
+  $("main").inert = false; $("topbar").inert = false; $("quick-status").inert = false;
+  ["main", "topbar", "quick-status"].forEach(id => $(id).removeAttribute("inert"));
+  document.body.classList.remove("is-sidebar-open");
+  if (returnFocus) $("menu-button").focus();
+}
 document.addEventListener("click", event => {
   if (inTransition) return;
   const choice = event.target.closest("[data-choice]");
@@ -1182,9 +1268,14 @@ document.addEventListener("click", event => {
 $("skip-transition").addEventListener("click", finishOverlay);
 $("advance-button").addEventListener("click", () => { if (!inTransition) advanceCash(); });
 $("restart-button").addEventListener("click", () => restartRun());
-$("menu-button").addEventListener("click", () => { $("sidebar").classList.add("open"); $("overlay").classList.remove("hidden"); $("menu-button").setAttribute("aria-expanded", "true"); });
-$("close-sidebar").addEventListener("click", closeSidebar);
-$("overlay").addEventListener("click", closeSidebar);
+$("menu-button").addEventListener("click", openSidebar);
+$("quick-status").addEventListener("click", openSidebar);
+$("close-sidebar").addEventListener("click", () => closeSidebar(true));
+$("overlay").addEventListener("click", () => closeSidebar(true));
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && $("sidebar").classList.contains("open") && !$("detail-dialog").open) closeSidebar(true);
+});
+window.matchMedia("(min-width: 921px)").addEventListener("change", event => { if (event.matches) closeSidebar(); });
 $("close-dialog").addEventListener("click", () => $("detail-dialog").close());
 $("brand").addEventListener("click", event => { event.preventDefault(); if (!inTransition) render(); });
 // Existing saves at the current threshold also receive any missing achievement.
