@@ -14,6 +14,17 @@ const ENDING_ICONS = {
   "结束了？": "🌙", "极限过载": "🔋", "最佳小队": "🤝",
   "午夜钟鸣": "🕛", "停止响应": "💤"
 };
+const ENDING_CODES = { "结束了？": "A", "极限过载": "B", "最佳小队": "C", "午夜钟鸣": "D", "停止响应": "E" };
+const TASK_RULESET = "task-progress-v1";
+const TASK_PREPARATIONS = [
+  { id: "scope", label: "共同讨论任务范围", points: 4 },
+  { id: "monday", label: "交付与测试清单初稿", points: 4 },
+  { id: "tuesday", label: "按范围修订验收清单", points: 4 },
+  { id: "swap", label: "交换分工的演示材料", points: 3 },
+  { id: "outline", label: "周六展示提纲", points: 2 },
+  { id: "steps", label: "空结果复现步骤", points: 4 },
+  { id: "qa", label: "补一次验收检查", points: 4 }
+];
 const FATIGUE_RULES = { lowBattery: 70, fullSleepRecovery: 16, restRecovery: 8 };
 const ACHIEVEMENTS = [
   { name: "低电量", icon: "🪫", condition: `本局疲劳第一次达到或超过${FATIGUE_RULES.lowBattery}%。`, insight: "劳动力包括人用于生产使用价值的体力和智力。", source: "《资本论》第一卷·第四章 货币转化为资本", url: "https://www.marxists.org/chinese/marx/capital/04.htm" },
@@ -23,11 +34,12 @@ const ACHIEVEMENTS = [
   { name: "友军支援", icon: "🤝", condition: "实际履行至少一项借用设备、交换分工或生活互助；仅看过提议不算。", insight: "有计划的共同劳动，能够形成个人单干所没有的生产力。", source: "《资本论》第一卷·第十一章 协作", url: "https://www.marxists.org/chinese/marx/capital/11.htm" },
   { name: "专业人士", icon: "🛠️", condition: "本人完成并交付100元完整委托或40元较小委托；此时可以仍待验收付款。", insight: "有目的的劳动，把预先设想的目标落实为能够满足需要的成果。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
   { name: "补给到位", icon: "🧾", condition: "本人网页委托或另约的活动介绍稿验收后，实际收到至少一笔报酬；预支生活费不算。", insight: "商品价值的实现，需要完成商品向货币的转化。", source: "《资本论》第一卷·第三章 货币或商品流通", url: "https://www.marxists.org/chinese/marx/capital/03.htm" },
-  { name: "最后一击", icon: "⏳", condition: "采用周日21:00和22:50的两个电脑时段，在23:50完成核对上传，且未因疲劳中断。", insight: "有目的的劳动，还需要相应的劳动资料来实现目标。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
+  { name: "最后一击", icon: "⏳", condition: "采用周日21:00和22:50的两个电脑时段，在23:50完成核对上传并满足本局完整交付条件，且未因疲劳中断；旧版已收藏徽章保留。", insight: "有目的的劳动，还需要相应的劳动资料来实现目标。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
   { name: "穿透迷雾", icon: "🔎", condition: "周五依次读完商户用途、制作者工作和验收状态三个记录；本人接单或程越接单均可。", insight: "商品形式使生产者之间的社会联系，表现为物与物的关系。", source: "《资本论》第一卷·第一章 商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" }
 ];
 const DEFAULT_STATE = () => ({
-  version: 1, stage: "intro", day: 0, time: "", cash: 300, fatigue: 20,
+  version: 2, ruleset: TASK_RULESET, task: { preparations: [], demonstrated: false },
+  stage: "intro", day: 0, time: "", cash: 300, fatigue: 20,
   maxFatigue: 20, dayPeaks: [20, 0, 0, 0, 0, 0, 0], foodSpent: 0,
   paidMeals: {}, ledger: [], journal: [], achievements: [], collabs: [],
   device: null, mondayHour: null, gift: null, birthday: null,
@@ -43,7 +55,14 @@ const DEFAULT_STATE = () => ({
 function loadState() {
   try {
     const value = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (value && value.version === 1 && typeof value.stage === "string") return value;
+    if (value && [1, 2].includes(value.version) && typeof value.stage === "string") {
+      const initial = DEFAULT_STATE();
+      return { ...initial, ...value, version: 2,
+        ruleset: value.version === 1 ? "legacy" : value.ruleset || "legacy",
+        task: { ...initial.task, ...value.task, preparations: Array.isArray(value.task?.preparations) ? value.task.preparations : [],
+          demonstrated: value.task?.demonstrated ?? (value.journal || []).some(item => item.kind === "反馈" && item.day === 5) }
+      };
+    }
   } catch (_) { /* Browsers may deny local storage on a file URL. */ }
   return DEFAULT_STATE();
 }
@@ -75,6 +94,43 @@ function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } cat
 function note(text) { s.notice = text; }
 function log(text, kind = "事件", day = s.day, time = s.time) {
   s.journal.push({ text, kind, day, time });
+}
+function usesTaskRules() { return s.ruleset === TASK_RULESET; }
+function preparationProgress() {
+  if (!usesTaskRules()) return 10;
+  return Math.min(10, s.task.preparations.reduce((total, record) => total + (TASK_PREPARATIONS.find(item => item.id === record.id)?.points || 0), 0));
+}
+function finishPreparation(id, time = s.time) {
+  if (!usesTaskRules() || s.task.preparations.some(item => item.id === id)) return;
+  const item = TASK_PREPARATIONS.find(record => record.id === id);
+  if (!item) return;
+  s.task.preparations.push({ id, day: s.day, time });
+  log(`完成${item.label}；准备与核验 ${preparationProgress()}/10。`, "任务进度", s.day, time);
+}
+function taskProgress() {
+  const mobileNeed = s.mobileChoice === "self" ? 3 : 1;
+  const rows = [
+    { id: "basics", label: "基础功能", value: Math.min(4, s.courseHours) * 10, max: 40 },
+    { id: "mobile", label: "手机核心操作", value: s.mobileChoice ? Math.round(Math.min(mobileNeed, s.mobileHours) / mobileNeed * 20) : 0, max: 20 },
+    { id: "demo", label: "展示与反馈", value: s.task.demonstrated ? 10 : 0, max: 10 },
+    { id: "preparation", label: "准备与核验", value: preparationProgress(), max: 10 },
+    { id: "fix", label: "最终问题修正", value: s.finalFix ? 10 : 0, max: 10 },
+    { id: "upload", label: "核对与上传", value: s.uploaded ? 10 : 0, max: 10 }
+  ];
+  return { rows, total: rows.reduce((total, row) => total + row.value, 0) };
+}
+function deliveryComplete() {
+  return s.finalFix && s.uploaded && s.courseHours >= 4 && s.mobileHours >= (s.mobileChoice === "self" ? 3 : 1) && (!usesTaskRules() || taskProgress().total === 100);
+}
+function teamQualified() {
+  if (!usesTaskRules()) return s.collabs.length >= 2 && s.collabs.some(item => item.course);
+  const work = s.collabs.filter(item => item.id !== "monday-device");
+  return work.length >= 2 && new Set(work.map(item => item.day)).size >= 2 && work.some(item => item.course);
+}
+function overloadQualified() {
+  const peak = usesTaskRules() ? 70 : 75;
+  const final = usesTaskRules() ? 65 : 75;
+  return s.dayPeaks[5] >= peak && s.dayPeaks[6] >= peak && s.fatigue >= final;
 }
 function entry(label, delta, day = s.day, time = s.time) {
   s.ledger.push({ label, delta, day, time });
@@ -190,7 +246,7 @@ function chooseMondayDevice(id) {
 }
 function chooseMondayHour(id) {
   s.mondayHour = id;
-  if (id === "checklist") { if (!fatigue(6, "整理交付范围和测试清单", "22:00—23:00")) return; log("把初版清单发给队友，明天讨论时继续核对。", "项目"); }
+  if (id === "checklist") { if (!fatigue(6, "整理交付范围和测试清单", "22:00—23:00")) return; log("把初版清单发给队友，明天讨论时继续核对。", "项目"); finishPreparation("monday", "22:00—23:00"); }
   if (id === "sketch") { if (!fatigue(6, "画时间轴与页面草图", "22:00—23:00")) return; s.personal.push("周一留下时间轴草图"); }
   if (id === "rest") { log("向队友说明设备情况并约好明天讨论。", "沟通"); if (!fatigue(-FATIGUE_RULES.restRecovery, "今晚明确休息一小时", "22:00—23:00")) return; }
   if (!sleep()) return;
@@ -202,6 +258,7 @@ function startTuesday() {
   s.time = "12:20"; if (!payMeal(1, "午餐", 7, "")) return;
   if (!fatigue(10, "当天课程与起居", "12:20")) return;
   if (!fatigue(6, "与队友讨论本周项目范围", "12:30—13:30")) return;
+  finishPreparation("scope", "12:30—13:30");
   s.time = "16:00";
   if (s.device === "repair" && !fatigue(4, "取回完成复测的电脑", "16:00—17:00")) return;
   setStage("tueGift", 1, "17:00");
@@ -218,6 +275,7 @@ function chooseGift(id) {
     log("照片卡已做好；购买打印服务与把心意交给朋友是两件事。", "准备");
   } else {
     if (!fatigue(6, "整理课程验收清单", "17:00—18:00")) return;
+    finishPreparation("tuesday", "17:00—18:00");
     log("给阿辰发去生日祝福，今晚是否见面仍待决定。", "沟通");
   }
   setStage("tueDinner", 1, "18:00");
@@ -253,16 +311,19 @@ function chooseSwap(id) {
   finishWednesday();
 }
 function commissionHour(reason, time) {
+  if (!fatigue(6, reason, time)) return false;
   s.commissionHours++;
-  return fatigue(6, reason, time);
+  return true;
 }
 function courseHour(reason, time) {
+  if (!fatigue(6, reason, time)) return false;
   s.courseHours = Math.min(4, s.courseHours + 1);
-  return fatigue(6, reason, time);
+  return true;
 }
 function mobileHour(reason, time) {
+  if (!fatigue(6, reason, time)) return false;
   s.mobileHours = Math.min(3, s.mobileHours + 1);
-  return fatigue(6, reason, time);
+  return true;
 }
 function deliverCommission(time) {
   if (s.commissionDelivered || s.commission === "decline") return;
@@ -297,6 +358,7 @@ function finishWednesday() {
   }
   if (s.device === "borrow" && s.commission === "full") {
     if (!fatigue(6, "按约整理队友的演示材料", "20:00—21:00")) return;
+    finishPreparation("swap", "20:00—21:00");
     s.courseHours = 3;
     log("队友实际完成一小时课程功能；你已发出演示材料，周四仍须完成自己的一小时代码。", "分工");
   }
@@ -361,6 +423,7 @@ function thuAfterDinner() {
     if (!fatigue(-FATIGUE_RULES.restRecovery, "22点后休息一小时", "22:00—23:00")) return;
   } else {
     if (!fatigue(6, "用手机整理周六展示提纲", "20:00—21:00")) return;
+    finishPreparation("outline", "20:00—21:00");
     if (!fatigue(-FATIGUE_RULES.restRecovery, "21点后明确休息一小时", "21:00—22:00")) return;
   }
   if (!sleep()) return;
@@ -451,6 +514,7 @@ function satAfterLunch() {
   if (!fatigue(10, "当天课程与起居", "12:00")) return;
   s.time = "14:00";
   if (!fatigue(6, "和队友展示活动网页并让同学实际操作", "14:00—15:00")) return;
+  s.task.demonstrated = true;
   log("一位同学筛选后遇到空结果，不知道是没有活动还是页面未加载。最终版仍需一小时修正、一小时核对上传。", "反馈", 5, "15:10");
   setStage("satPersonal", 5, "16:00");
 }
@@ -484,6 +548,7 @@ function chooseSaturdayCoord(id) {
   if (id === "team") {
     log("约定：你今晚发空结果触发步骤；队友周日18:00修正，你20:00核对上传。", "分工");
     if (!fatigue(6, "整理并发出空结果复现步骤", "19:00—20:00")) return;
+    finishPreparation("steps", "19:00—20:00");
   }
   if (id === "defer") {
     if (!fatigue(6, "继续个人作品集说明", "19:00—20:00")) return;
@@ -523,7 +588,11 @@ function chooseSundayDevice(id) {
 }
 function chooseSundayPersonal(id) {
   s.time = "17:00";
-  if (id === "portfolio") {
+  if (id === "qa") {
+    if (!usesTaskRules() || preparationProgress() >= 10) return;
+    if (!fatigue(6, "补一次验收检查", "17:00—18:00")) return;
+    finishPreparation("qa", "17:00—18:00");
+  } else if (id === "portfolio") {
     if (!fatigue(6, "整理自己的摄影或时间轴记录", "17:00—18:00")) return;
     s.personal.push("周日整理个人作品集说明");
   } else if (!fatigue(-FATIGUE_RULES.restRecovery, "截止前明确休息一小时", "17:00—18:00")) return;
@@ -548,37 +617,39 @@ function chooseSundayExecute(id) {
     if (!fatigue(6, "核对最终文件并上传", "20:00—21:00")) return;
     s.uploaded = true; s.uploadTime = "周日21:00";
   } else if (s.sunPlan === "roommate") {
-    s.finalFix = true;
     if (!fatigue(6, "用室友电脑修正空结果提示", "19:00—20:00")) return;
+    s.finalFix = true;
     collaborate("sunday-roommate", "你履行截图整理约定，室友19:00—20:00实际借出电脑供课程修正。", true);
     if (!fatigue(-FATIGUE_RULES.restRecovery, "两段电脑工作间休息一小时", "20:00—21:00")) return;
     if (!fatigue(6, "用队友电脑核对最终文件并上传", "21:00—22:00")) return;
     s.uploaded = true; s.uploadTime = "周日22:00";
   } else if (s.sunPlan === "late") {
-    s.finalFix = true;
     if (!fatigue(6, "修正空结果提示", "21:00—22:00")) return;
-    if (!fatigue(8, "晚间追加核对和整理最终文件", "22:50—23:50")) return;
-    s.uploaded = true; s.uploadTime = "周日23:50"; unlock("最后一击");
-  } else if (s.sunPlan === "none") {
     s.finalFix = true;
+    if (!fatigue(8, "晚间追加核对和整理最终文件", "22:50—23:50")) return;
+    s.uploaded = true; s.uploadTime = "周日23:50";
+    if (deliveryComplete()) unlock("最后一击");
+  } else if (s.sunPlan === "none") {
     if (!fatigue(6, "用仅有的一小时修正空结果提示", "21:00—22:00")) return;
+    s.finalFix = true;
     log("文件核对与上传仍欠一小时电脑时段。", "项目");
   } else {
-    s.finalFix = true;
     if (!fatigue(6, "修正空结果提示", "20:00—21:00")) return;
+    s.finalFix = true;
     if (!fatigue(6, "核对最终文件并上传", "21:00—22:00")) return;
     s.uploaded = true; s.uploadTime = "周日22:00";
   }
   conclude();
 }
 function conclude() {
+  if (s.ending === "停止响应") return;
   s.time = "23:59";
-  if (!s.finalFix || !s.uploaded || s.courseHours < 4 || s.mobileHours < (s.mobileChoice === "self" ? 3 : 1)) s.ending = "午夜钟鸣";
-  else if (s.dayPeaks[5] >= 75 && s.dayPeaks[6] >= 75 && s.fatigue >= 75) s.ending = "极限过载";
-  else if (s.collabs.length >= 2 && s.collabs.some(item => item.course)) s.ending = "最佳小队";
+  if (!deliveryComplete()) s.ending = "午夜钟鸣";
+  else if (overloadQualified()) s.ending = "极限过载";
+  else if (teamQualified()) s.ending = "最佳小队";
   else s.ending = "结束了？";
   s.stage = "ending";
-  log(s.uploaded ? `最终版在${s.uploadTime}完成上传。` : "23:59截止时，最终版未完整提交。", "结局");
+  log(s.uploaded ? `文件在${s.uploadTime}上传；${deliveryComplete() ? "满足本局完整交付条件" : "必要验收项仍未齐全"}。` : "23:59截止时，最终版未完整提交。", "结局");
 }
 
 const deviceName = () => ({ repair: "已维修的本人电脑", borrow: "室友约定借用", public: "公共设备预约" }[s.device] || "尚未选择");
@@ -603,7 +674,7 @@ function scene() {
       day: "第一天 · 周一", title: "今晚还剩一小时", time: "22:00 · 宿舍",
       body: [`活动页面重新跑起来了。今天三餐已实际支付18元，基础功能推进2小时；${s.device === "repair" ? "维修点明天交机" : s.device === "borrow" ? "下一次室友借用时段是周四" : "下次公共设备预约在周三"}。`, "队友说：“明天讨论前带一下方案就行，范围一起定。不要把全部功能都赶在今晚。”"],
       choices: [
-        ["checklist", "整理交付范围与测试清单", `1小时手机或电脑准备；${projected(6)}`],
+        ["checklist", "整理交付范围与测试清单", `1小时手机或电脑准备；${projected(6)}${usesTaskRules() ? "；准备核验最多+4点" : ""}`],
         ["sketch", "留下自己想做的时间轴草图", `1小时个人构想；${projected(6)}`],
         ["rest", "告诉队友设备情况，今晚休息", `沟通后明确休息1小时；${projected(-FATIGUE_RULES.restRecovery)}`]
       ]
@@ -615,7 +686,7 @@ function scene() {
       choices: [
         ["keyboard", "参加键盘合购，饭前休息", `出资42元；${projected(-FATIGUE_RULES.restRecovery)}。礼物送出与购买分开记录。`, s.cash < 42],
         ["card", "做一张照片卡", `材料与打印8元，准备1小时；${projected(6)}`, s.cash < 8],
-        ["none", "发祝福，把一小时用来准备项目", `礼物支出0元，课程验收清单1小时；${projected(6)}`]
+        ["none", "发祝福，把一小时用来准备项目", `礼物支出0元，课程验收清单1小时；${projected(6)}${usesTaskRules() ? "；准备核验最多+4点" : ""}`]
       ]
     };
     case "tueDinner": return {
@@ -698,7 +769,7 @@ function scene() {
       body: ["晚饭已经付过。队友问：“空结果提示谁来修？最后谁上传？现在定，我好排自己的事。”", "周日23:59是本故事设定的最终提交时间。展示过，不等于最终版已经交上去。"],
       choices: [
         ["self", "自己做两项，确认周日20:00—22:00", `队友确认设备；今晚休息1小时，${projected(-FATIGUE_RULES.restRecovery)}。`],
-        ["team", "与队友分工，今晚发检查要点", `今晚手机整理1小时，${projected(6)}；队友明晚修正，你负责上传。`],
+        ["team", "与队友分工，今晚发检查要点", `今晚手机整理1小时，${projected(6)}${usesTaskRules() ? "；准备核验最多+4点" : ""}；队友明晚修正，你负责上传。`],
         ["defer", "今晚继续自己的作品集，明天再问", `个人创作1小时，${projected(6)}；${s.device === "repair" ? "本人电脑仍可用" : "目前只确认明晚1小时电脑"}。`]
       ]
     };
@@ -713,19 +784,21 @@ function scene() {
     };
     case "sunPersonal": return {
       day: "第七天 · 周日", title: "还留给自己一小时", time: "17:00 · 日历提醒",
-      body: [`今晚安排：${s.sunPlan === "team" ? "队友18点修正，你20点核对上传" : s.sunPlan === "self" ? "你20点至22点完成修正与上传" : s.sunPlan === "roommate" ? "室友19点借电脑，队友21点再借一小时" : s.sunPlan === "late" ? "你21点修正，22:50做最后核对" : "目前只确认21点一小时，仍欠上传时段"}。`, "这一小时可以整理自己的摄影或时间轴记录，也可以明确休息。两种安排都不会替你完成晚上的课程任务。"],
+      body: [`今晚安排：${s.sunPlan === "team" ? "队友18点修正，你20点核对上传" : s.sunPlan === "self" ? "你20点至22点完成修正与上传" : s.sunPlan === "roommate" ? "室友19点借电脑，队友21点再借一小时" : s.sunPlan === "late" ? "你21点修正，22:50做最后核对" : "目前只确认21点一小时，仍欠上传时段"}。`, usesTaskRules() ? `这一小时可以留给自己的作品集、明确休息，或补一次验收检查。准备核验当前 ${preparationProgress()}/10；检查最多补4点，也不会替你完成晚上的修正与上传。` : "这一小时可以整理自己的摄影或时间轴记录，也可以明确休息。两种安排都不会替你完成晚上的课程任务。"],
       choices: [
         ["portfolio", "整理自己的作品集说明", `手机专注1小时；${projected(6)}`],
-        ["rest", "明确休息一小时", `${projected(-FATIGUE_RULES.restRecovery)}`]
+        ["rest", "明确休息一小时", `${projected(-FATIGUE_RULES.restRecovery)}`],
+        ...(usesTaskRules() && preparationProgress() < 10 ? [["qa", "补一次验收检查", `17:00—18:00手机核验；${projected(6)}；核验 ${preparationProgress()}/10 → ${Math.min(10, preparationProgress() + 4)}/10${preparationProgress() + 4 < 10 ? "，补完仍有缺项" : ""}。`]] : [])
       ]
     };
     case "sunExecute": {
       const load = s.sunPlan === "team" ? 6 : s.sunPlan === "late" ? 14 : s.sunPlan === "none" ? 6 : 12;
+      const verification = usesTaskRules() && preparationProgress() < 10 ? `准备核验仍缺${10 - preparationProgress()}点，本段不会补验收材料。` : "";
       return {
         day: "第七天 · 周日", title: "日历的最后一格", time: "19:00 · 距截止只剩数小时",
         body: [`晚饭已付。${s.sunPlan === "team" ? "队友已经在18:00—19:00实际修好空结果提示，文件和截图发进群。" : "空结果提示还需要你用电脑修。"}`, "屏幕上同时有课程待办、已确认设备时段和当前疲劳。你可以按计划执行，也可以先停止今晚的工作并告知队友。"],
         choices: [
-          ["work", "按已确认的时段完成", `本段预计疲劳变化 ${s.sunPlan === "roommate" ? "+6、−8、+6" : `+${load}`}；${s.sunPlan === "none" ? "只有一小时，无法完整提交" : s.fatigue + load >= 100 && s.sunPlan !== "roommate" ? "有达到100%的风险，届时立即中断" : "完成后才会出现上传回执"}。`],
+        ["work", "按已确认的时段完成", `本段预计疲劳变化 ${s.sunPlan === "roommate" ? "+6、−8、+6" : `+${load}`}；${s.sunPlan === "none" ? "只有一小时，无法完整提交" : s.fatigue + load >= 100 && s.sunPlan !== "roommate" ? "有达到100%的风险，届时立即中断" : "完成后才会出现上传回执"}。${verification}`],
           ["pause", "暂停这一晚，先休息并告知队友", "不再增加工作；若最终版仍未交，23:59结算未完成。"]
         ]
       };
@@ -747,6 +820,36 @@ function choiceMarkup([id, title, detail, disabled = false]) {
 function messageMarkup([source, body]) {
   return `<div class="message"><span class="message-source">${source}</span><p>${body}</p></div>`;
 }
+function taskHint() {
+  if (!usesTaskRules()) return "本局沿用开局时的完成条件；新的准备核验要求从下一局启用。";
+  const missing = 10 - preparationProgress();
+  if (s.stage === "ending") {
+    const rows = taskProgress().rows.filter(row => row.value < row.max);
+    return rows.length ? `${s.uploaded ? "文件已上传；" : "截至本局结束；"}仍缺：${rows.map(row => row.label).join("、")}。` : "六项必要内容均已完成。";
+  }
+  if (s.day === 6 && missing > 0) return `准备核验还缺${missing}点。${s.stage === "sunPersonal" ? `这一小时最多补4点${missing > 4 ? "，补后仍不足10点" : ""}。` : "本段只处理修正与上传，不会新增核验材料。"}`;
+  if (s.day === 5 && missing > 0) return `准备核验还缺${missing}点。今晚可整理复现步骤（最多+4），周日17点可补一次检查（最多+4）；都占用实际时段。`;
+  if (s.day === 4 && missing > 0) return `准备核验 ${preparationProgress()}/10。周六复现步骤与周日补检查各最多补4点，安排时要同时考虑时间、设备与疲劳。`;
+  return "完整交付需要六项必要内容；清单、范围讨论和实际分工会留下可核对的成果。";
+}
+function renderTaskPanel(expanded = false) {
+  const task = taskProgress();
+  const items = s.task.preparations.map(record => {
+    const item = TASK_PREPARATIONS.find(entry => entry.id === record.id);
+    return item ? `<li>${DAYS[record.day]} · ${item.label}</li>` : "";
+  }).join("");
+  return `<section class="task-panel" aria-label="任务进度与验收清单">
+    <div class="task-header"><h2 class="task-title"><span aria-hidden="true">📋</span> 任务进度</h2><strong class="task-value">${task.total}%</strong></div>
+    <div class="task-track" role="progressbar" aria-label="任务进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${task.total}"><div class="task-fill" style="width:${task.total}%"></div></div>
+    <p class="task-hint">${taskHint()}</p>
+    <details class="task-checklist" ${expanded ? "open" : ""}><summary>查看验收清单 <span>${task.rows.filter(row => row.value === row.max).length}/6 项齐全</span></summary>
+      <ul class="task-grid">${task.rows.map(row => `<li class="task-row${row.value === row.max ? " complete" : ""}"><span><span aria-hidden="true">${row.value === row.max ? "✓" : "○"}</span> ${row.label}${row.id === "preparation" && !usesTaskRules() ? "<small>沿用本局原交付条件</small>" : ""}</span><b>${row.value}/${row.max}</b></li>`).join("")}</ul>
+      ${usesTaskRules() ? `<p class="task-caption">准备核验累计上限10。已完成材料：</p><ul class="task-materials">${items || "<li>暂未完成准备材料。</li>"}</ul>` : ""}
+      <p class="task-caption">${usesTaskRules() ? "进度达到100%、必要内容齐全并按时上传，才算完整交付。" : "本局按开始时的交付条件结算。"}</p>
+    </details>
+  </section>`;
+}
+function openTaskProgress() { openDialog("任务进度与验收清单", renderTaskPanel(true)); }
 function renderIntro() {
   return `<section class="hero"><div class="hero-content">
     <div class="hero-heading"><p class="eyebrow">七天 · 一次选择接着一次选择</p>
@@ -761,6 +864,7 @@ function renderIntro() {
       <button class="primary-button hero-start" type="button" data-action="replay">开始这一周</button>
       <button class="subtle-button hero-collection" type="button" data-action="collection"><span aria-hidden="true">🏅</span> 查看以往成就 <span class="collection-count">${collectedAchievements().length} / ${ACHIEVEMENTS.length}</span></button>
       <div class="teaser"><div class="teaser-art" aria-hidden="true"></div><div class="teaser-copy"><strong>周一 08:10 · 宿舍</strong><p>电脑没有亮。项目群的消息却已经到了。</p><small>阅读约 15–25 分钟</small></div></div>
+      <p class="hero-task-note">课程任务需要功能、验收材料与最终上传。开始后可随时查看进度和缺项。</p>
       ${marxNote("theory-whisper hero-whisper", 0)}
     </div>
   </div></section>`;
@@ -783,6 +887,7 @@ function marxNote(className = "theory-whisper", day = s.day) {
 }
 function renderStory(info) {
   return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${DAY_MOTIFS[s.day].icon}</span> ${info.day}</div><h1 class="story-title">${info.title}</h1><div class="story-time">${info.time}</div></div>
+    ${renderTaskPanel()}
     <section class="story-card"><div class="story-copy">${info.body.map(p => `<p>${p}</p>`).join("")}</div>${(info.messages || []).map(messageMarkup).join("")}${info.extra || ""}</section>
     ${s.notice && s.stage !== "funds" ? `<div class="warning">${s.notice}</div>` : ""}
     <p class="section-label">下一步</p><div class="choices">${(info.choices || []).map(choiceMarkup).join("")}</div>
@@ -829,9 +934,11 @@ function renderEnding() {
   const insight = ENDING_INSIGHTS[outcome];
   const paid = s.ledger.filter(item => item.delta < 0 && !item.label.includes("早餐") && !item.label.includes("午餐") && !item.label.includes("晚餐"));
   const rels = relationCards();
-  return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${ENDING_ICONS[outcome] || "📖"}</span> 本局结局 · ${DAYS[s.day]} ${s.time}</div><h1 class="result-title">${outcome}</h1><p class="result-copy">${ENDINGS[outcome] || ""}</p></div>
+  const text = outcome === "午夜钟鸣" && s.uploaded && usesTaskRules() ? `23:59。文件已经发出，必要验收项仍未齐全。${taskProgress().rows.filter(row => row.value < row.max).map(row => row.label).join("、")}留在清单里；这次上传还没有完成全部约定。明天如何处理，需要再和相关的人商量。` : ENDINGS[outcome] || "";
+  return `<div class="story-page"><div class="story-header"><div class="story-day"><span class="story-day-icon" aria-hidden="true">${ENDING_ICONS[outcome] || "📖"}</span> ${ENDING_CODES[outcome] ? `${ENDING_CODES[outcome]}结局` : "本局结局"} · ${DAYS[s.day]} ${s.time}</div><h1 class="result-title">${outcome}</h1><p class="result-copy">${text}</p></div>
     ${insight ? `<aside class="ending-insight" aria-label="结局回望"><p>${insight.text}</p>${knowledgeSource(insight)}</aside>` : ""}
     <section class="ending-actions" aria-label="本局结束后的选择"><p>这一周结束了。换个选择，会走到哪里？</p><div class="ending-buttons"><button class="primary-button" type="button" data-action="replay"><span aria-hidden="true">↻</span> 再来一局</button><button class="subtle-button" type="button" data-action="home"><span aria-hidden="true">⌂</span> 返回首页</button></div><small>新一局从周一和300元开始，已解锁成就会保留。</small></section>
+    ${renderTaskPanel()}
     <section class="story-card"><p class="eyebrow">我的这一周${outcome === "停止响应" ? " · 截至中断时" : ""}</p>
       <div class="record-grid">
         <div class="record-card"><h3>账本</h3><p>实际余额 ${money(s.cash)}<br>已付餐费 ${money(s.foodSpent)}<br>本人委托实际收入 ${money(s.earnings)}<br>其他实际支出 ${money(-paid.reduce((n, item) => n + item.delta, 0))}${s.advanceUsed ? "<br>下周生活费已提前使用100元，下次少100元" : ""}</p></div>
@@ -871,6 +978,7 @@ function renderTheory() {
 }
 function renderSidebar() {
   const remaining = s.cash - reserve();
+  const task = taskProgress();
   $("hud").innerHTML = `<div class="hud-grid">
     <div class="stat"><span class="stat-label"><span aria-hidden="true">💰</span> 实际余额</span><span class="stat-value">${money(s.cash)}</span></div>
     <div class="stat"><span class="stat-label">餐费预留之外</span><span class="stat-value small ${remaining < 0 ? "warn" : ""}">${remaining >= 0 ? money(remaining) : `缺 ${money(-remaining)}`}</span></div>
@@ -879,6 +987,8 @@ function renderSidebar() {
   $("schedule").innerHTML = `<div class="aside-section"><h2 class="aside-heading">日程与进度</h2>
     <div class="aside-line"><span>当前</span><strong>${s.stage === "intro" ? "周一开始前" : `${DAYS[s.day]} ${s.time}`}</strong></div>
     <div class="aside-line"><span>课程基础功能</span><strong>${s.courseHours}/4 小时</strong></div>
+    <div class="aside-line"><span>任务进度</span><strong>${task.total}%</strong></div>
+    <button type="button" class="subtle-button" data-action="tasks">查看任务进度与验收清单</button>
     <div class="aside-line"><span>主要设备</span><strong>${deviceName()}</strong></div>
     <div class="aside-line"><span>商户委托</span><strong>${commissionName()}</strong></div>
     <div class="aside-line"><span>最终提交</span><strong>周日 23:59</strong></div>
@@ -1059,6 +1169,7 @@ document.addEventListener("click", event => {
   if (action) {
     if (action.dataset.action === "journal") openJournal();
     if (action.dataset.action === "collection") openAchievements();
+    if (action.dataset.action === "tasks") openTaskProgress();
     if (action.dataset.action === "home") restartRun();
     if (action.dataset.action === "replay") restartRun(true);
     if (action.dataset.action === "theory") { s.stage = "theory"; s.theoryPage = 0; render(); }
