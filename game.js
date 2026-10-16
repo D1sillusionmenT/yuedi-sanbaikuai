@@ -25,12 +25,12 @@ const TASK_PREPARATIONS = [
   { id: "steps", label: "空结果复现步骤", points: 4 },
   { id: "qa", label: "补一次验收检查", points: 4 }
 ];
-const FATIGUE_RULES = { lowBattery: 70, fullSleepRecovery: 16, restRecovery: 8 };
+const FATIGUE_RULES = { lowBattery: 70, recoveryTarget: 60, fullSleepRecovery: 16, restRecovery: 8 };
 const ACHIEVEMENTS = [
   { name: "低电量", icon: "🪫", condition: `本局疲劳第一次达到或超过${FATIGUE_RULES.lowBattery}%。`, insight: "劳动力包括人用于生产使用价值的体力和智力。", source: "《资本论》第一卷·第四章 货币转化为资本", url: "https://www.marxists.org/chinese/marx/capital/04.htm" },
   { name: "后台堆积", icon: "📚", condition: "本局疲劳第一次达到或超过75%。", insight: "劳动时间的延长，会碰到劳动者身体承受能力的界限。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
   { name: "请保存工作", icon: "💾", condition: "本局疲劳第一次达到或超过90%。", insight: "劳动者还需要留出满足精神生活与社会交往的时间。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
-  { name: "重新上线", icon: "🌿", condition: "本局曾达到75%疲劳，随后在未中断的情况下恢复到50%以下。", insight: "劳动能力的持续发挥，需要休息和生活资料来恢复消耗。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
+  { name: "重新上线", icon: "🌿", description: "消息可以晚点回，你先缓过来了。", condition: `本局疲劳曾达到或超过${FATIGUE_RULES.lowBattery}%，随后通过休息或睡眠恢复至${FATIGUE_RULES.recoveryTarget}%及以下，且未因疲劳中断。`, insight: "劳动能力的持续发挥，需要休息和生活资料来恢复消耗。", source: "《资本论》第一卷·第八章 工作日", url: "https://www.marxists.org/chinese/marx/capital/08.htm" },
   { name: "友军支援", icon: "🤝", condition: "实际履行至少一项借用设备、交换分工或生活互助；仅看过提议不算。", insight: "有计划的共同劳动，能够形成个人单干所没有的生产力。", source: "《资本论》第一卷·第十一章 协作", url: "https://www.marxists.org/chinese/marx/capital/11.htm" },
   { name: "专业人士", icon: "🛠️", condition: "本人完成并交付100元完整委托或40元较小委托；此时可以仍待验收付款。", insight: "有目的的劳动，把预先设想的目标落实为能够满足需要的成果。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
   { name: "补给到位", icon: "🧾", condition: "本人网页委托或另约的活动介绍稿验收后，实际收到至少一笔报酬；预支生活费不算。", insight: "商品价值的实现，需要完成商品向货币的转化。", source: "《资本论》第一卷·第三章 货币或商品流通", url: "https://www.marxists.org/chinese/marx/capital/03.htm" },
@@ -211,6 +211,19 @@ function payMeal(day, kind, amount, resume) {
   s.paidMeals[key] = amount;
   return true;
 }
+function hasRecoveryRecord() {
+  let reachedLowBattery = false;
+  for (const item of s.journal) {
+    if (item.kind !== "疲劳") continue;
+    const change = item.text.match(/：疲劳 (\d+)% → (\d+)%$/);
+    if (!change) continue;
+    const before = Number(change[1]), after = Number(change[2]);
+    if (before >= 100 || after >= 100) return false;
+    if (Math.max(before, after) >= FATIGUE_RULES.lowBattery) reachedLowBattery = true;
+    if (reachedLowBattery && after < before && after <= FATIGUE_RULES.recoveryTarget) return true;
+  }
+  return false;
+}
 function fatigue(delta, reason, time = s.time) {
   const old = s.fatigue;
   s.fatigue = clamp(old + delta);
@@ -223,7 +236,7 @@ function fatigue(delta, reason, time = s.time) {
   if (s.fatigue >= FATIGUE_RULES.lowBattery && !s.achievements.includes("低电量")) unlock("低电量");
   if (old < 75 && s.fatigue >= 75) unlock("后台堆积");
   if (old < 90 && s.fatigue >= 90) unlock("请保存工作");
-  if (s.maxFatigue >= 75 && old >= 50 && s.fatigue < 50 && s.fatigue < 100) unlock("重新上线");
+  if (delta < 0 && s.maxFatigue >= FATIGUE_RULES.lowBattery && s.maxFatigue < 100 && s.fatigue <= FATIGUE_RULES.recoveryTarget) unlock("重新上线");
   if (s.fatigue >= 100) {
     s.ending = "停止响应";
     s.stage = "ending";
@@ -1323,4 +1336,5 @@ $("brand").addEventListener("click", event => { event.preventDefault(); if (!inT
 // Existing saves at the current threshold also receive any missing achievement.
 if (s.fatigue >= FATIGUE_RULES.lowBattery && !s.achievements.includes("低电量")) unlock("低电量");
 if (s.advanceUsed && s.ledger.some(item => item.delta === 100 && item.label === "家人提前转来下周生活费（下次少100元）") && !s.achievements.includes("下周见")) unlock("下周见");
+if (!s.achievements.includes("重新上线") && hasRecoveryRecord()) unlock("重新上线");
 render();
