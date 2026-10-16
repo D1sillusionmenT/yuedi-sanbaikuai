@@ -35,7 +35,8 @@ const ACHIEVEMENTS = [
   { name: "专业人士", icon: "🛠️", condition: "本人完成并交付100元完整委托或40元较小委托；此时可以仍待验收付款。", insight: "有目的的劳动，把预先设想的目标落实为能够满足需要的成果。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
   { name: "补给到位", icon: "🧾", condition: "本人网页委托或另约的活动介绍稿验收后，实际收到至少一笔报酬；预支生活费不算。", insight: "商品价值的实现，需要完成商品向货币的转化。", source: "《资本论》第一卷·第三章 货币或商品流通", url: "https://www.marxists.org/chinese/marx/capital/03.htm" },
   { name: "最后一击", icon: "⏳", condition: "采用周日21:00和22:50的两个电脑时段，在23:50完成核对上传并满足本局完整交付条件，且未因疲劳中断；旧版已收藏徽章保留。", insight: "有目的的劳动，还需要相应的劳动资料来实现目标。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
-  { name: "穿透迷雾", icon: "🔎", condition: "周五依次读完商户用途、制作者工作和验收状态三个记录；本人接单或程越接单均可。", insight: "彼此独立的私人劳动通过交换取得社会联系，这种联系表现为劳动产品之间的价值关系。商品拜物教根源于商品生产的这种社会形式。", source: "《资本论》第一卷·第一章第四节 商品的拜物教性质及其秘密", url: "https://www.marxists.org/chinese/marx/capital/01.htm" }
+  { name: "穿透迷雾", icon: "🔎", condition: "周五依次读完商户用途、制作者工作和验收状态三个记录；本人接单或程越接单均可。", insight: "彼此独立的私人劳动通过交换取得社会联系，这种联系表现为劳动产品之间的价值关系。商品拜物教根源于商品生产的这种社会形式。", source: "《资本论》第一卷·第一章第四节 商品的拜物教性质及其秘密", url: "https://www.marxists.org/chinese/marx/capital/01.htm" },
+  { name: "下周见", icon: "📅", description: "这周的问题解决了，下周的你收到了消息。", condition: "本局向家人预支下周生活费100元，并实际到账；只查看预支说明不算。", insight: "人们首先需要满足基本生活需要，才能从事其他活动。预支改变了两周生活费的使用时间，也使后续安排受到新的条件约束。", source: "《德意志意识形态》第一卷·费尔巴哈", url: "https://www.marxists.org/chinese/marx/marxist.org-chinese-marx-1846.htm" }
 ];
 const DEFAULT_STATE = () => ({
   version: 2, ruleset: TASK_RULESET, task: { preparations: [], demonstrated: false },
@@ -250,7 +251,8 @@ function advanceCash() {
   s.advanceUsed = true; s.cash += 100;
   entry("家人提前转来下周生活费（下次少100元）", 100);
   log("向家人说明情况后，100元实际到账；下次生活费相应少100元。", "转账");
-  if (s.stage === "funds" && s.pendingMeal) resumeMeal(); else { note("预支已到账。它是下周生活费提前使用，不是委托收入。 "); render(); }
+  unlock("下周见");
+  if (s.stage === "funds" && s.pendingMeal) resumeMeal(); else { note("预支已到账。下次生活费减少100元；成就「下周见」已解锁。"); render(); }
 }
 function resumeMeal() {
   const pending = s.pendingMeal;
@@ -1196,7 +1198,7 @@ function openAchievements() {
 function openAchievement(name) {
   const item = ACHIEVEMENTS.find(a => a.name === name);
   if (!item || !achievementCollection.has(name)) return;
-  openDialog(`${item.icon} ${item.name}`, `<p class="achievement-unlocked">已解锁</p><div class="achievement-detail"><p class="achievement-condition"><strong>触发条件</strong><br>${item.condition}</p><p class="achievement-insight">${item.insight}${knowledgeSource(item)}</p>${name === "穿透迷雾" ? `<details class="task-checklist"><summary>重读完整解读</summary>${mistExplanationMarkup()}</details>` : ""}</div><button class="subtle-button" type="button" data-action="collection">返回以往成就</button>`);
+  openDialog(`${item.icon} ${item.name}`, `<p class="achievement-unlocked">已解锁</p>${item.description ? `<p class="hero-note">${item.description}</p>` : ""}<div class="achievement-detail"><p class="achievement-condition"><strong>触发条件</strong><br>${item.condition}</p><p class="achievement-insight">${item.insight}${knowledgeSource(item)}</p>${name === "穿透迷雾" ? `<details class="task-checklist"><summary>重读完整解读</summary>${mistExplanationMarkup()}</details>` : ""}</div><button class="subtle-button" type="button" data-action="collection">返回以往成就</button>`);
 }
 function restartRun(startImmediately = false) {
   if (inTransition) return;
@@ -1320,4 +1322,5 @@ $("close-dialog").addEventListener("click", () => $("detail-dialog").close());
 $("brand").addEventListener("click", event => { event.preventDefault(); if (!inTransition) render(); });
 // Existing saves at the current threshold also receive any missing achievement.
 if (s.fatigue >= FATIGUE_RULES.lowBattery && !s.achievements.includes("低电量")) unlock("低电量");
+if (s.advanceUsed && s.ledger.some(item => item.delta === 100 && item.label === "家人提前转来下周生活费（下次少100元）") && !s.achievements.includes("下周见")) unlock("下周见");
 render();
