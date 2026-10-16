@@ -35,7 +35,7 @@ const ACHIEVEMENTS = [
   { name: "专业人士", icon: "🛠️", condition: "本人完成并交付100元完整委托或40元较小委托；此时可以仍待验收付款。", insight: "有目的的劳动，把预先设想的目标落实为能够满足需要的成果。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
   { name: "补给到位", icon: "🧾", condition: "本人网页委托或另约的活动介绍稿验收后，实际收到至少一笔报酬；预支生活费不算。", insight: "商品价值的实现，需要完成商品向货币的转化。", source: "《资本论》第一卷·第三章 货币或商品流通", url: "https://www.marxists.org/chinese/marx/capital/03.htm" },
   { name: "最后一击", icon: "⏳", condition: "采用周日21:00和22:50的两个电脑时段，在23:50完成核对上传并满足本局完整交付条件，且未因疲劳中断；旧版已收藏徽章保留。", insight: "有目的的劳动，还需要相应的劳动资料来实现目标。", source: "《资本论》第一卷·第五章 劳动过程和价值增殖过程", url: "https://www.marxists.org/chinese/marx/capital/05.htm" },
-  { name: "穿透迷雾", icon: "🔎", condition: "周五依次读完商户用途、制作者工作和验收状态三个记录；本人接单或程越接单均可。", insight: "商品形式使生产者之间的社会联系，表现为物与物的关系。", source: "《资本论》第一卷·第一章 商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" }
+  { name: "穿透迷雾", icon: "🔎", condition: "周五依次读完商户用途、制作者工作和验收状态三个记录；本人接单或程越接单均可。", insight: "彼此独立的私人劳动通过交换取得社会联系，这种联系表现为劳动产品之间的价值关系。商品拜物教根源于商品生产的这种社会形式。", source: "《资本论》第一卷·第一章第四节 商品的拜物教性质及其秘密", url: "https://www.marxists.org/chinese/marx/capital/01.htm" }
 ];
 const DEFAULT_STATE = () => ({
   version: 2, ruleset: TASK_RULESET, task: { preparations: [], demonstrated: false },
@@ -1196,7 +1196,7 @@ function openAchievements() {
 function openAchievement(name) {
   const item = ACHIEVEMENTS.find(a => a.name === name);
   if (!item || !achievementCollection.has(name)) return;
-  openDialog(`${item.icon} ${item.name}`, `<p class="achievement-unlocked">已解锁</p><div class="achievement-detail"><p class="achievement-condition"><strong>触发条件</strong><br>${item.condition}</p><p class="achievement-insight">${item.insight}${knowledgeSource(item)}</p></div><button class="subtle-button" type="button" data-action="collection">返回以往成就</button>`);
+  openDialog(`${item.icon} ${item.name}`, `<p class="achievement-unlocked">已解锁</p><div class="achievement-detail"><p class="achievement-condition"><strong>触发条件</strong><br>${item.condition}</p><p class="achievement-insight">${item.insight}${knowledgeSource(item)}</p>${name === "穿透迷雾" ? `<details class="task-checklist"><summary>重读完整解读</summary>${mistExplanationMarkup()}</details>` : ""}</div><button class="subtle-button" type="button" data-action="collection">返回以往成就</button>`);
 }
 function restartRun(startImmediately = false) {
   if (inTransition) return;
@@ -1214,17 +1214,56 @@ function openJournal() {
   const rows = s.journal.map(item => `<div class="message"><span class="message-source">${DAYS[item.day]} ${item.time || ""} · ${item.kind}</span><p>${item.text}</p></div>`).join("");
   openDialog("本局发生过什么", rows || "<p>故事还没有开始。</p>");
 }
+function mistExplanationMarkup() {
+  const source = ACHIEVEMENTS.find(item => item.name === "穿透迷雾");
+  return `<section aria-label="穿透迷雾完整解读">
+    <h3 class="aside-heading">社会关系怎样取得物的形式</h3>
+    <p>把三份记录接起来，可以看见一条关系：<strong>分别安排的劳动 → 通过劳动成果的交换发生联系 → 以商品、货币及其数量关系表现出来。</strong></p>
+    <p>制作者熟悉程序，商户熟悉活动，维修者熟悉电脑故障。彼此的活动并没有因此直接组成一张共同计划；交易把这些分别进行的劳动连接起来。</p>
+    <p>在商品生产中，生产者之间劳动的社会联系，通过劳动产品之间的价值关系来表现。于是，产品仿佛天然就具有支配交换的价值属性；由人们的生产关系形成的社会性质，取得了物的属性和物之间关系的外观。</p>
+    <p>这就是<strong>商品拜物教</strong>所要揭示的机制。即使已经知道每位制作者是谁，只要这种生产和交换方式继续存在，人们仍要通过商品与货币实现这部分社会联系。认识这种机制，并不会使它自动消失。</p>
+    <h3 class="aside-heading">把课程小组放到旁边看一看</h3>
+    <p>你们可以围绕共同目标直接商量谁写代码、谁做核验。在这项内部协作中，每次交接不必先把各自成果卖给对方。这个有限的对照，让人看见劳动联系能够采取不同形式；一个课程小组还不能等同于整个社会的生产制度。</p>
+    <p><strong>账本记录了钱与物怎样转手。现在，你也能追问：这些数额怎样连接了分别劳动的人，又怎样反过来影响他们的安排？</strong></p>
+    <p class="achievement-insight">以上为结合游戏情境的原理解释。${knowledgeSource(source)}</p>
+  </section>`;
+}
 function openRecord(index) {
-  if (s.stage !== "friMobile" || (index > 0 && !s.hiddenReads[index - 1])) return;
+  if (s.stage !== "friMobile" || !Number.isInteger(index) || index < 0 || index > 2 || (index > 0 && !s.hiddenReads[index - 1])) return;
   s.hiddenReads[index] = true;
+  const maker = s.commission === "decline" ? "程越" : "你";
+  const workRecord = s.commission === "decline"
+    ? "程越分享了他的工作便签：确认要改的地方、安排电脑时段，再制作和核对页面。这些工作由他按自己的约定完成；他的交付、验收和收入进入他的经历。你读到记录，也没有因此获得他的报酬。"
+    : s.commission === "small"
+    ? "你更新了约定的文字与链接，也写清沿用旧布局的限制。一小时的工作按范围完成，聊天中的40元约定仍要经过后续验收与付款才能进入账本。"
+    : "你的日志留下三小时工作：确认资料与范围、制作入口、调整与核对。聊天中的100元约定，没有随着每次按下保存键，自动变成余额。";
+  const firstSource = { source: "《资本论》第一卷·第二章 交换过程", url: "https://www.marxists.org/chinese/marx/capital/02.htm" };
+  const secondSource = { source: "《资本论》第一卷·第一章 商品", url: "https://www.marxists.org/chinese/marx/capital/01.htm" };
+  const thirdSource = { source: "《资本论》第一卷·第三章第二、三节 商品的形态变化与支付手段", url: "https://www.marxists.org/chinese/marx/capital/03.htm" };
   const blocks = [
-    ["商户的手机", "周三早上，老板把活动时间、地点和报名入口放在备忘录里。上次发群消息时，有人问“报名在哪”，他回了三次链接。他想让入口在手机上直接可见，却没有重做整站的钱和时间。"],
-    ["制作者的屏幕", s.commission === "decline" ? "程越在便签上圈出要改的地方，确认手机里的按钮位置。他把电脑工作排进自己的时间；你处理这一周别的事情。" : s.commission === "small" ? "你圈出需替换的文字与链接，把沿用旧布局的限制写进聊天。商户决定群里另附直达入口。" : "你把活动文字和现有表单排成一页，给手机上先看到什么画了小框。100元在这时仍是一条约定。"],
-    ["17:30的验收", s.commission === "decline" ? "商户按程越确认的用途点进报名入口；转账留在程越手机里，你看到的是他发来的说明。" : "商户按确认的用途点进报名入口。制作者等待成果被接受；直到18:00实际转账，账本才多了这笔钱。"]
+    ["商户的手机", `<p class="achievement-unlocked">记录 1 / 3 · 用途与交换</p>
+      <p>商户拿起手机，点开活动，找到时间、地点，最后试了一次报名入口。“群里的人能直接找到这里，这个页面就能用。”聊天上方还停着确认用途、工作范围、交付时间与报酬的消息。</p>
+      <p>同一个页面接入两份不同的安排：商户用它组织活动；${maker}完成约定，并通过交付取得报酬。</p>
+      <h3 class="aside-heading">沿着记录再看一层</h3>
+      <p>从页面满足的具体需要，可以看见它的<strong>使用价值</strong>；从双方约定交付和报酬，可以追踪这份成果怎样进入交换关系。技术功能、约定价格和双方的需要，要分别考察。</p>
+      <p class="achievement-insight">${knowledgeSource(firstSource)}</p>`],
+    ["制作者的屏幕", `<p class="achievement-unlocked">记录 2 / 3 · 劳动怎样取得社会联系</p>
+      <p>${workRecord}</p><p>时间已经花出去，为什么还需要交换另一端的确认？</p>
+      <h3 class="aside-heading">私人劳动与社会劳动的联系</h3>
+      <p>在商品生产条件下，生产者分别安排自己的劳动，又依赖别人的劳动满足需要。各自劳动能否适应社会需要，要通过交换关系受到检验。这里的验收与付款提供了观察入口；单个客户的个人好恶不能直接充当全社会的尺度。</p>
+      <p>个人耗时不能直接等同于<strong>社会必要劳动时间</strong>；把100元除以三小时，也不能直接算出商品价值量。价格还可能偏离价值。</p>
+      <p class="achievement-insight">${knowledgeSource(secondSource)} <a href="https://www.marxists.org/chinese/marx/capital/03.htm" target="_blank" rel="noopener noreferrer">另见第三章 货币或商品流通</a></p>`],
+    ["17:30的验收", `<p class="achievement-unlocked">记录 3 / 3 · 货币把什么接了起来</p>
+      <p>17:30，商户按事先确认的用途检查页面。18:00，转账实际到达${s.commission === "decline" ? "程越的账户；你看到的是他分享的说明，报酬没有进入你的余额" : "你的账户；网页报酬进入实际余额"}。</p>
+      <p>这笔报酬现在可以用于之后的餐食、工具或其他支出。17:30已经支付的晚饭，仍须由当时的实际余额承担，18:00的转账不能倒填先前的账。</p>
+      <p>网页报酬、餐费、维修报价、组件价格排在手机里。它们背后是不同人的活动，账本却把它们都写成可以加减的货币数额。</p>
+      <h3 class="aside-heading">商品—货币—商品</h3>
+      <p>劳动成果转为货币，再由货币取得其他产品或服务，是理解这条联系的入口。劳动完成、成果依约被接受和实际收到货币，需要区分；延期付款涉及货币的<strong>支付手段</strong>职能。18点到账，并不意味着价值在这一刻才被创造。</p>
+      <p class="achievement-insight">${knowledgeSource(thirdSource)}</p>`]
   ];
   if (s.hiddenReads.every(Boolean)) unlock("穿透迷雾");
   render();
-  openDialog(blocks[index][0], `<p>${blocks[index][1]}</p>${s.hiddenReads.every(Boolean) ? "<p><strong>穿透迷雾</strong>已解锁：同一页，双方分别安排了什么、得到什么、又等到什么时候？</p>" : ""}`);
+  openDialog(blocks[index][0], `${blocks[index][1]}${index === 2 && s.hiddenReads.every(Boolean) ? `<div class="divider"></div><p class="achievement-unlocked">🔎 穿透迷雾 · 已解锁</p>${mistExplanationMarkup()}` : ""}<button class="subtle-button" type="button" data-action="close-dialog">返回游戏</button>`);
 }
 function openSidebar() {
   $("sidebar").classList.add("open"); $("overlay").classList.remove("hidden");
@@ -1256,6 +1295,7 @@ document.addEventListener("click", event => {
     if (action.dataset.action === "journal") openJournal();
     if (action.dataset.action === "collection") openAchievements();
     if (action.dataset.action === "tasks") openTaskProgress();
+    if (action.dataset.action === "close-dialog") $("detail-dialog").close();
     if (action.dataset.action === "home") restartRun();
     if (action.dataset.action === "replay") restartRun(true);
     if (action.dataset.action === "theory") { s.stage = "theory"; s.theoryPage = 0; render(); }
